@@ -9,8 +9,10 @@ pub fn main() !void {
 }
 
 fn f1() !void {
-    const allocator = std.heap.page_allocator;
-    var graph = Graph.init(allocator);
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
 
     // f = x + y, where x = 2, y = 3
     // ∂f/∂x = 1
@@ -42,8 +44,10 @@ fn f1() !void {
 }
 
 fn f2() !void {
-    const allocator = std.heap.page_allocator;
-    var graph = Graph.init(allocator);
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
 
     // f = x * y, where x = 2, y = 3
     // ∂f/∂x = y
@@ -75,8 +79,10 @@ fn f2() !void {
 }
 
 fn f3() !void {
-    const allocator = std.heap.page_allocator;
-    var graph = Graph.init(allocator);
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
 
     // f = x*x - y*y, where x = 2, y = 3
     // ∂f/∂x = 2*x
@@ -114,8 +120,10 @@ fn f3() !void {
 }
 
 fn f4() !void {
-    const allocator = std.heap.page_allocator;
-    var graph = Graph.init(allocator);
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
 
     // f = x * sin(y + 5) + (y + 5) * (y + 5) * x, where x = 2, y = 3
     // ∂f/∂x = sin(y + 5) + (y + 5) * (y + 5)
