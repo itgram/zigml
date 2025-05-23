@@ -8,4 +8,5 @@ pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
 pub const Sin = @import("sin.zig").Sin;
 pub const Subtract = @import("subtract.zig").Subtract;
+pub const Tensor = @import("tensor.zig").Tensor;
 pub const Variable = @import("variable.zig").Variable;

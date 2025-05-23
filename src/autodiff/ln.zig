@@ -1,36 +1,54 @@
 const std = @import("std");
+const math = @import("std").math;
 const Node = @import("node.zig").Node;
+const Tensor = @import("tensor.zig").Tensor;
 
 /// Natural Logarithm node
 /// f = ln(x)
 pub const Ln = struct {
-    value: ?f64,
+    allocator: std.mem.Allocator,
+    value: ?*Tensor,
     x: Node,
 
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Ln {
         const ptr = try allocator.create(Ln);
+        ptr.allocator = allocator;
         ptr.value = null;
         ptr.x = x;
 
         return ptr;
     }
 
-    pub fn eval(self: *Ln) f64 {
+    pub fn eval(self: *Ln) *Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        self.value = std.math.log(std.math.e, self.x.eval());
+        const x = self.x.eval();
 
-        std.debug.print("Ln-eval: value: {?d}\n", .{self.value});
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
+
+        for (self.value.?.data, x.data) |*v, xv| {
+            v.* = math.log(math.e, xv);
+        }
+
+        std.debug.print("Ln-eval: value: {?}\n", .{self.value});
 
         return self.value.?;
     }
 
-    pub fn diff(self: *Ln, dval: f64) void {
-        self.x.diff(dval * (1 / self.x.eval()));
+    pub fn diff(self: *Ln, dval: *Tensor) void {
+        const x = self.x.eval();
 
-        std.debug.print("Ln-diff: value: {?d}, dval: {d}\n", .{ self.value, dval });
+        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+
+        for (ndval.data, x.data, dval.data) |*v, xv, dv| {
+            v.* = dv / xv;
+        }
+
+        self.x.diff(ndval);
+
+        std.debug.print("Ln-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     pub fn node(self: *Ln) Node {

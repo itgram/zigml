@@ -1,12 +1,13 @@
 const std = @import("std");
+const Tensor = @import("tensor.zig").Tensor;
 
 pub const Node = struct {
     ptr: *anyopaque,
     vtab: *const VTab, //ptr to vtab
 
     const VTab = struct {
-        evalFn: *const fn (ptr: *anyopaque) f64,
-        diffFn: *const fn (ptr: *anyopaque, dval: f64) void,
+        evalFn: *const fn (ptr: *anyopaque) *Tensor,
+        diffFn: *const fn (ptr: *anyopaque, dval: *Tensor) void,
     };
 
     // cast concrete implementation types/objs to interface
@@ -19,11 +20,11 @@ pub const Node = struct {
         std.debug.assert(@typeInfo(ptrInfo.pointer.child) == .@"struct"); // Must point to a struct
 
         const impl = struct {
-            fn eval(pointer: *anyopaque) f64 {
+            fn eval(pointer: *anyopaque) *Tensor {
                 const self: T = @ptrCast(@alignCast(pointer));
                 return self.eval();
             }
-            fn diff(pointer: *anyopaque, dval: f64) void {
+            fn diff(pointer: *anyopaque, dval: *Tensor) void {
                 const self: T = @ptrCast(@alignCast(pointer));
                 self.diff(dval);
             }
@@ -38,11 +39,11 @@ pub const Node = struct {
         };
     }
 
-    pub fn eval(self: Node) f64 {
+    pub fn eval(self: Node) *Tensor {
         return self.vtab.evalFn(self.ptr);
     }
 
-    pub fn diff(self: Node, dval: f64) void {
+    pub fn diff(self: Node, dval: *Tensor) void {
         self.vtab.diffFn(self.ptr, dval);
     }
 };

@@ -14,18 +14,27 @@ fn f1() !void {
     // f = x + y, where x = 2, y = 3
     // ∂f/∂x = 1
     // ∂f/∂y = 1
-    var x = try autodiff.Variable.init(allocator, "x", 2.0);
-    var y = try autodiff.Variable.init(allocator, "y", 3.0);
+    const x_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    x_tensor.data[0] = 2.0;
+
+    const y_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    y_tensor.data[0] = 3.0;
+
+    var x = try autodiff.Variable.init(allocator, "x", x_tensor);
+    var y = try autodiff.Variable.init(allocator, "y", y_tensor);
 
     // f = x + y
     var f = try autodiff.Add.init(allocator, x.node(), y.node());
 
     const fVal = f.eval();
-    std.debug.print("f = {d}\n", .{fVal});
+    std.debug.print("f = {}\n", .{fVal});
 
-    f.diff(1.0);
-    std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
-    std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
+    const df_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    df_tensor.data[0] = 1.0;
+
+    f.diff(df_tensor);
+    std.debug.print("∂f/∂x = {?}\n", .{x.grad});
+    std.debug.print("∂f/∂y = {?}\n", .{y.grad});
 
     std.debug.print("-------------------------------\n", .{});
     std.debug.print("\n", .{});
@@ -37,8 +46,14 @@ fn f2() !void {
     // f = x * y, where x = 2, y = 3
     // ∂f/∂x = y
     // ∂f/∂y = x
-    var x = try autodiff.Variable.init(allocator, "x", 2.0);
-    var y = try autodiff.Variable.init(allocator, "y", 3.0);
+    const x_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    x_tensor.data[0] = 2.0;
+
+    const y_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    y_tensor.data[0] = 3.0;
+
+    var x = try autodiff.Variable.init(allocator, "x", x_tensor);
+    var y = try autodiff.Variable.init(allocator, "y", y_tensor);
 
     // f = x + y
     var f = try autodiff.Multiply.init(allocator, x.node(), y.node());
@@ -46,7 +61,10 @@ fn f2() !void {
     const fVal = f.eval();
     std.debug.print("f = {d}\n", .{fVal});
 
-    f.diff(1.0);
+    const df_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    df_tensor.data[0] = 1.0;
+
+    f.diff(df_tensor);
     std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
     std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
 
@@ -60,8 +78,14 @@ fn f3() !void {
     // f = x*x - y*y, where x = 2, y = 3
     // ∂f/∂x = 2*x
     // ∂f/∂y = -2*y
-    var x = try autodiff.Variable.init(allocator, "x", 2.0);
-    var y = try autodiff.Variable.init(allocator, "y", 3.0);
+    const x_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    x_tensor.data[0] = 2.0;
+
+    const y_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    y_tensor.data[0] = 3.0;
+
+    var x = try autodiff.Variable.init(allocator, "x", x_tensor);
+    var y = try autodiff.Variable.init(allocator, "y", y_tensor);
 
     // v1 = x * x
     var v1 = try autodiff.Multiply.init(allocator, x.node(), x.node());
@@ -75,7 +99,10 @@ fn f3() !void {
     const fVal = f.eval();
     std.debug.print("f = {d}\n", .{fVal});
 
-    f.diff(1.0);
+    const df_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    df_tensor.data[0] = 1.0;
+
+    f.diff(df_tensor);
     std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
     std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
 
@@ -89,9 +116,19 @@ fn f4() !void {
     // f = x * sin(y + 5) + (y + 5) * (y + 5) * x, where x = 2, y = 3
     // ∂f/∂x = sin(y + 5) + (y + 5) * (y + 5)
     // ∂f/∂y = x * cos(y + 5) + 2 * (y + 5) * x
-    var x = try autodiff.Variable.init(allocator, "x", 2.0);
-    var y = try autodiff.Variable.init(allocator, "y", 3.0);
-    var c = try autodiff.Constant.init(allocator, 5.0);
+    const x_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    x_tensor.data[0] = 2.0;
+
+    const y_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    y_tensor.data[0] = 3.0;
+
+    var x = try autodiff.Variable.init(allocator, "x", x_tensor);
+    var y = try autodiff.Variable.init(allocator, "y", y_tensor);
+
+    const c_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    c_tensor.data[0] = 5.0;
+
+    var c = try autodiff.Constant.init(allocator, c_tensor);
 
     // v1 = y + c
     var v1 = try autodiff.Add.init(allocator, y.node(), c.node());
@@ -114,7 +151,10 @@ fn f4() !void {
     const fVal = f.eval();
     std.debug.print("f = {d}\n", .{fVal});
 
-    f.diff(1.0);
+    const df_tensor = try autodiff.Tensor.init(allocator, &[_]usize{1});
+    df_tensor.data[0] = 1.0;
+
+    f.diff(df_tensor);
     std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
     std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
 
