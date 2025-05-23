@@ -1,14 +1,9 @@
 const std = @import("std");
 const Graph = @import("autodiff/graph.zig").Graph;
 
-pub fn main() !void {
-    try f1();
-    try f2();
-    try f3();
-    try f4();
-}
+pub fn main() !void {}
 
-fn f1() !void {
+test "add operation eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
 
@@ -17,33 +12,30 @@ fn f1() !void {
     // f = x + y, where x = 2, y = 3
     // ∂f/∂x = 1
     // ∂f/∂y = 1
-    const x_tensor = try graph.tensor(&[_]usize{1});
-    x_tensor.data[0] = 2.0;
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{1});
-    y_tensor.data[0] = 3.0;
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", x_tensor);
-    var y = try graph.input("y", y_tensor);
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
 
     // f = x + y
     var f = try graph.add(x.node(), y.node());
 
-    const fVal = f.eval();
-    std.debug.print("f = {}\n", .{fVal});
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 5.0), result.data[0]);
 
-    const df_tensor = try graph.tensor(&[_]usize{1});
-    df_tensor.data[0] = 1.0;
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
 
-    f.diff(df_tensor);
-    std.debug.print("∂f/∂x = {?}\n", .{x.grad});
-    std.debug.print("∂f/∂y = {?}\n", .{y.grad});
-
-    std.debug.print("-------------------------------\n", .{});
-    std.debug.print("\n", .{});
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 1.0), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 1.0), y.grad.data[0]);
 }
 
-fn f2() !void {
+test "multiply operation eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
 
@@ -52,33 +44,30 @@ fn f2() !void {
     // f = x * y, where x = 2, y = 3
     // ∂f/∂x = y
     // ∂f/∂y = x
-    const x_tensor = try graph.tensor(&[_]usize{1});
-    x_tensor.data[0] = 2.0;
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{1});
-    y_tensor.data[0] = 3.0;
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", x_tensor);
-    var y = try graph.input("y", y_tensor);
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
 
     // f = x + y
     var f = try graph.multiply(x.node(), y.node());
 
-    const fVal = f.eval();
-    std.debug.print("f = {d}\n", .{fVal});
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 6.0), result.data[0]);
 
-    const df_tensor = try graph.tensor(&[_]usize{1});
-    df_tensor.data[0] = 1.0;
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
 
-    f.diff(df_tensor);
-    std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
-    std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
-
-    std.debug.print("-------------------------------\n", .{});
-    std.debug.print("\n", .{});
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 3.0), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 2.0), y.grad.data[0]);
 }
 
-fn f3() !void {
+test "multiply operation with subtract eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
 
@@ -87,14 +76,14 @@ fn f3() !void {
     // f = x*x - y*y, where x = 2, y = 3
     // ∂f/∂x = 2*x
     // ∂f/∂y = -2*y
-    const x_tensor = try graph.tensor(&[_]usize{1});
-    x_tensor.data[0] = 2.0;
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{1});
-    y_tensor.data[0] = 3.0;
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", x_tensor);
-    var y = try graph.input("y", y_tensor);
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
 
     // v1 = x * x
     var v1 = try graph.multiply(x.node(), x.node());
@@ -105,21 +94,18 @@ fn f3() !void {
     // f = v1 - v2
     var f = try graph.subtract(v1.node(), v2.node());
 
-    const fVal = f.eval();
-    std.debug.print("f = {d}\n", .{fVal});
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, -5.0), result.data[0]);
 
-    const df_tensor = try graph.tensor(&[_]usize{1});
-    df_tensor.data[0] = 1.0;
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
 
-    f.diff(df_tensor);
-    std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
-    std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
-
-    std.debug.print("-------------------------------\n", .{});
-    std.debug.print("\n", .{});
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 4.0), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, -6.0), y.grad.data[0]);
 }
 
-fn f4() !void {
+test "complex operation eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
 
@@ -128,14 +114,14 @@ fn f4() !void {
     // f = x * sin(y + 5) + (y + 5) * (y + 5) * x, where x = 2, y = 3
     // ∂f/∂x = sin(y + 5) + (y + 5) * (y + 5)
     // ∂f/∂y = x * cos(y + 5) + 2 * (y + 5) * x
-    const x_tensor = try graph.tensor(&[_]usize{1});
-    x_tensor.data[0] = 2.0;
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{1});
-    y_tensor.data[0] = 3.0;
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", x_tensor);
-    var y = try graph.input("y", y_tensor);
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
 
     const c_tensor = try graph.tensor(&[_]usize{1});
     c_tensor.data[0] = 5.0;
@@ -160,16 +146,13 @@ fn f4() !void {
     // f = v5 + v3
     var f = try graph.add(v5.node(), v3.node());
 
-    const fVal = f.eval();
-    std.debug.print("f = {d}\n", .{fVal});
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 129.97871649324676), result.data[0]);
 
-    const df_tensor = try graph.tensor(&[_]usize{1});
-    df_tensor.data[0] = 1.0;
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
 
-    f.diff(df_tensor);
-    std.debug.print("∂f/∂x = {?d}\n", .{x.grad});
-    std.debug.print("∂f/∂y = {?d}\n", .{y.grad});
-
-    std.debug.print("-------------------------------\n", .{});
-    std.debug.print("\n", .{});
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 64.98935824662338), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 31.708999932382774), y.grad.data[0]);
 }

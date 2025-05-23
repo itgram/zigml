@@ -24,7 +24,7 @@ pub const Variable = struct {
     }
 
     pub fn diff(self: *Variable, dval: *Tensor) void {
-        for (self.grad.data, dval.data) |*d, dv| d.* += dv;
+        for (self.grad.data, dval.data) |*g, dv| g.* += dv;
 
         std.debug.print("Variable-diff: {s}, value: {}, grad: {}, dval: {}\n", .{ self.name, self.value, self.grad, dval });
     }
