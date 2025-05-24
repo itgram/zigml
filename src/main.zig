@@ -105,7 +105,7 @@ test "multiply operation with subtract eval and diff" {
     try std.testing.expectEqual(@as(f64, -6.0), y.grad.data[0]);
 }
 
-test "complex operation eval and diff" {
+test "sin operation with other operations eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
 
@@ -123,10 +123,10 @@ test "complex operation eval and diff" {
     var x = try graph.input("x", xTensor);
     var y = try graph.input("y", yTensor);
 
-    const c_tensor = try graph.tensor(&[_]usize{1});
-    c_tensor.data[0] = 5.0;
+    const cTensor = try graph.tensor(&[_]usize{1});
+    cTensor.data[0] = 5.0;
 
-    var c = try graph.constant(c_tensor);
+    var c = try graph.constant(cTensor);
 
     // v1 = y + c
     var v1 = try graph.add(y.node(), c.node());
@@ -155,4 +155,41 @@ test "complex operation eval and diff" {
     f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 64.98935824662338), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 31.708999932382774), y.grad.data[0]);
+}
+
+test "duplicate input eval and diff" {
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
+
+    // f = (x + 2) * sin(x), where x = 2
+    // ∂f/∂x = sin(x) + (x + 2) * cos(x)
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
+
+    var x = try graph.input("x", xTensor);
+
+    const cTensor = try graph.tensor(&[_]usize{1});
+    cTensor.data[0] = 2.0;
+
+    var c = try graph.constant(cTensor);
+
+    // v1 = x + c
+    var v1 = try graph.add(x.node(), c.node());
+
+    // v2 = sin(x)
+    var v2 = try graph.sin(x.node());
+
+    // f = v1 * v2
+    const f = try graph.multiply(v1.node(), v2.node());
+
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 3.637189707302727), result.data[0]);
+
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
+
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, -0.7552899193628879), x.grad.data[0]);
 }
