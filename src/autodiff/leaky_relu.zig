@@ -3,8 +3,15 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// LeakyReLU function node.
-/// f(x, alpha) = x if x > 0 else alpha * x, where alpha is a small constant (e.g., 0.01)
+/// Leaky ReLU activation function node.
+/// The Leaky ReLU function is used in neural networks to introduce non-linearity.
+/// It allows a small, non-zero gradient when the input is negative, which helps to prevent dead neurons.
+/// The Leaky ReLU function is defined as:
+/// f(x) = x if x > 0 else α * x
+/// - For positive inputs: f(x) = x
+/// - For negative inputs: f(x) = α * x
+/// where α is a small positive constant (default 0.01).
+/// The Leaky ReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
 pub const LeakyReLU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

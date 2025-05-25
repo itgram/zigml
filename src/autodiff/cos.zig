@@ -4,7 +4,15 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Cos function node.
-/// f = cos(x)
+/// The Cos node represents the cosine function applied to a tensor.
+/// It computes the cosine of each element in the input tensor.
+/// The Cos node is used in neural networks and mathematical computations where the cosine function is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// It is defined as:
+/// f(x) = cos(x)
+/// where x is the input tensor.
+/// The Cosine function is a periodic function that oscillates between -1 and 1.
+/// The cosine function is often used in trigonometric calculations and periodic functions.
 pub const Cos = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

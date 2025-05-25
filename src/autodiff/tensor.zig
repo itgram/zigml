@@ -1,5 +1,12 @@
 const std = @import("std");
 
+/// Tensor structure for representing multi-dimensional arrays.
+/// The Tensor structure is often used in machine learning and scientific computing.
+/// It is defined as:
+/// Tensor(shape=[dim1, dim2, ...], data=[value1, value2, ...])
+/// where shape is an array of dimensions and data is an array of values.
+/// The Tensor structure is a fundamental building block for many machine learning frameworks.
+/// It is used to represent inputs, outputs, and intermediate values in neural networks.
 pub const Tensor = struct {
     allocator: std.mem.Allocator,
     shape: []const usize,

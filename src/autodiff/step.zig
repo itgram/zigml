@@ -3,8 +3,14 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Step function node
-/// f(x) = 1 if x >= threshold else 0, where threshold is a constant value (default 0)
+/// Step function node.
+/// where threshold is a configurable value (default is 0.0).
+/// The Step function is often used in binary classification tasks and as an activation function in neural networks.
+/// It is not differentiable at the threshold, but it can be used in contexts where a hard thresholding is required.
+/// The Step function is useful for creating binary outputs from continuous inputs.
+/// It is defined as:
+/// f(x) = 1 if x >= threshold, else 0
+/// where x is the input tensor and threshold is a configurable value (default is 0.0).
 pub const Step = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

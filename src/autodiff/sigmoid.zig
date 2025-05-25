@@ -4,10 +4,13 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Sigmoid function node.
-/// f = σ(x) = 1 / (1 + exp(-x))
+/// The Sigmoid function is defined as:
+/// f(x) = σ(x) = 1 / (1 + exp(-x))
 /// where σ is the sigmoid function.
-/// The sigmoid function maps any real-valued number to the (0, 1) interval.
-/// It is often used in neural networks as an activation function.
+/// The Sigmoid function maps any real-valued number to the (0, 1) interval.
+/// The Sigmoid function is commonly used in neural networks as an activation function.
+/// It is particularly useful for binary classification tasks.
+/// The Sigmoid function is differentiable everywhere, making it suitable for backpropagation in neural networks.
 pub const Sigmoid = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

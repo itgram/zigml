@@ -1,6 +1,9 @@
 const std = @import("std");
 const Tensor = @import("tensor.zig").Tensor;
 
+/// Node interface for autodiff.
+/// The Node interface defines the structure for nodes in the computation graph.
+/// Each node must implement the `eval` and `diff` methods.
 pub const Node = struct {
     ptr: *anyopaque,
     vtab: *const VTab, //ptr to vtab

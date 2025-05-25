@@ -3,8 +3,16 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Natural Logarithm node
-/// f = ln(x)
+/// Ln function node.
+/// The natural logarithm function, which is the logarithm to the base e.
+/// It is defined as the inverse of the exponential function.
+/// The Ln node computes the natural logarithm of each element in the input tensor.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Ln node is commonly used in various mathematical computations and neural networks.
+/// It is defined as:
+/// f(x) = ln(x)
+/// where x is the input tensor.
+/// The natural logarithm is often used in optimization problems and loss functions.
 pub const Ln = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

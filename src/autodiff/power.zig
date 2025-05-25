@@ -3,8 +3,14 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Power node
-/// f = a ^ b
+/// Power function node.
+/// where a and b are nodes representing tensors.
+/// The Power node is used to compute the element-wise power of two tensors.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Power node is defined as:
+/// f(a, b) = a^b
+/// where a is the base tensor and b is the exponent tensor.
+/// The Power node is typically used in neural networks for operations such as exponentiation and activation functions.
 pub const Power = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

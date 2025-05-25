@@ -3,7 +3,15 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Add two nodes
-/// f = a + b
+/// where a and b are nodes that evaluate to tensors.
+/// The Add node computes the element-wise sum of the tensors produced by its two input nodes.
+/// It is used to represent addition operations in the computation graph.
+/// The Add node is a fundamental operation in many neural networks and mathematical computations.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Add node is defined as:
+/// f(a, b) = a + b
+/// where a and b are the input tensors.
+/// The Add node is typically used in conjunction with other nodes to build complex computation graphs.
 pub const Add = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

@@ -3,8 +3,16 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Logarithm node
-/// f = log(x)
+/// Log function node.
+/// The Log node represents the logarithm function applied to a tensor.
+/// It computes the logarithm of each element in the input tensor to the base 10.
+/// The Log node is used in various mathematical computations and neural networks where logarithmic scaling is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Log node is defined as:
+/// f(x) = log10(x)
+/// where x is the input tensor.
+/// The logarithm function is often used in optimization problems and loss functions.
+/// The Log node is typically used in conjunction with other nodes to build complex computation graphs.
 pub const Log = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

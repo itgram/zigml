@@ -4,10 +4,16 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Tanh function node.
-/// f = tanh(x) = sinh(x) / cosh(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x))
-/// The hyperbolic tangent function is a scaled version of the sigmoid function,
-/// which maps real numbers to the range (-1, 1). It is often used in neural networks
-/// as an activation function because it is zero-centered and has a steeper gradient than the sigmoid function.
+/// The Tanh (hyperbolic tangent) function.
+/// The Tanh function maps any real-valued number to the (-1, 1) interval.
+/// The Tanh function is commonly used in neural networks as an activation function.
+/// It is particularly useful for hidden layers in neural networks.
+/// The Tanh function is differentiable everywhere, making it suitable for backpropagation in neural networks.
+/// It is defined as:
+/// f(x) = tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
+/// where e is the base of the natural logarithm.
+/// and x is the input tensor.
+/// The Tanh function is a smooth, continuous function that is symmetric around the origin.
 pub const Tanh = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

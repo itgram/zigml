@@ -2,8 +2,16 @@ const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Divide two nodes
-/// f = a / b
+/// Divide function node.
+/// where a and b are nodes that evaluate to tensors.
+/// The Divide node computes the element-wise division of the tensors produced by its two input nodes.
+/// It is used to represent division operations in the computation graph.
+/// The Divide node is a fundamental operation in many neural networks and mathematical computations.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Divide node is defined as:
+/// f(a, b) = a / b
+/// where a is the numerator tensor and b is the denominator tensor.
+/// The Divide node is typically used in conjunction with other nodes to build complex computation graphs.
 pub const Divide = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

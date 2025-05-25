@@ -25,30 +25,34 @@ pub const Tanh = @import("tanh.zig").Tanh;
 pub const Tensor = @import("tensor.zig").Tensor;
 pub const Variable = @import("variable.zig").Variable;
 
-/// Graph abstraction to manage node creation and memory
+/// Graph structure for building computational graphs.
+/// The Graph struct provides methods to create and manipulate nodes in a computational graph.
+/// It allows the user to define operations such as addition, multiplication, and activation functions.
+/// The Graph struct is designed to be used with an allocator for memory management.
 pub const Graph = struct {
     allocator: std.mem.Allocator,
 
+    /// Initialize a new Graph with the given allocator.
     pub fn init(allocator: std.mem.Allocator) Graph {
         return Graph{ .allocator = allocator };
     }
 
-    /// Add two nodes
+    /// Create an addition node
     pub fn add(self: *Graph, a: Node, b: Node) !*Add {
         return try Add.init(self.allocator, a, b);
     }
 
-    /// Create an constant node
+    /// Create a constant node
     pub fn constant(self: *Graph, value: *Tensor) !*Constant {
         return try Constant.init(self.allocator, value);
     }
 
-    /// Create a cos node
+    /// Create a cosine node
     pub fn cos(self: *Graph, x: Node) !*Cos {
         return try Cos.init(self.allocator, x);
     }
 
-    /// Divide two nodes
+    /// Create a division node
     pub fn divide(self: *Graph, a: Node, b: Node) !*Divide {
         return try Divide.init(self.allocator, a, b);
     }
@@ -58,7 +62,7 @@ pub const Graph = struct {
         return try Elu.init(self.allocator, x, alpha);
     }
 
-    /// Exponential of a node
+    /// Create an exponential node
     pub fn exp(self: *Graph, x: Node) !*Exp {
         return try Exp.init(self.allocator, x);
     }
@@ -73,22 +77,22 @@ pub const Graph = struct {
         return try Linear.init(self.allocator, x);
     }
 
-    /// Ln of a node
+    /// Create a natural logarithm node
     pub fn ln(self: *Graph, x: Node) !*Ln {
         return try Ln.init(self.allocator, x);
     }
 
-    /// Log of a node
+    /// Create a logarithm node
     pub fn log(self: *Graph, x: Node) !*Log {
         return try Log.init(self.allocator, x);
     }
 
-    /// Multiply two nodes
+    /// Create a multiplication node
     pub fn multiply(self: *Graph, a: Node, b: Node) !*Multiply {
         return try Multiply.init(self.allocator, a, b);
     }
 
-    /// Power two nodes
+    /// Create a power node
     pub fn power(self: *Graph, a: Node, b: Node) !*Power {
         return try Power.init(self.allocator, a, b);
     }
@@ -108,37 +112,37 @@ pub const Graph = struct {
         return try Selu.init(self.allocator, x, alpha, lambda);
     }
 
-    /// Sigmoid of a node
+    /// Create a sigmoid node
     pub fn sigmoid(self: *Graph, x: Node) !*Sigmoid {
         return try Sigmoid.init(self.allocator, x);
     }
 
-    /// Sin of a node
+    /// Create a sine node
     pub fn sin(self: *Graph, x: Node) !*Sin {
         return try Sin.init(self.allocator, x);
     }
 
-    /// Step function of a node
+    /// Create a step node
     pub fn step(self: *Graph, x: Node, threshold: f64) !*Step {
         return try Step.init(self.allocator, x, threshold);
     }
 
-    /// Subtract two nodes
+    /// Create a subtraction node
     pub fn subtract(self: *Graph, a: Node, b: Node) !*Subtract {
         return try Subtract.init(self.allocator, a, b);
     }
 
-    /// Create an tensor
+    /// Create a tensor with the given shape
     pub fn tensor(self: *Graph, shape: []const usize) !*Tensor {
         return try Tensor.init(self.allocator, shape);
     }
 
-    /// Tangent of a node
+    /// Create a tangent node
     pub fn tan(self: *Graph, x: Node) !*Tan {
         return try Tan.init(self.allocator, x);
     }
 
-    /// Hyperbolic tangent of a node
+    /// Create a hyperbolic tangent node
     pub fn tanh(self: *Graph, x: Node) !*Tanh {
         return try Tanh.init(self.allocator, x);
     }

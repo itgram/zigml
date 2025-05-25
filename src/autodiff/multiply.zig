@@ -2,8 +2,16 @@ const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Multiply two nodes together.
-/// f = a * b
+/// Multiply function node.
+/// The Multiply node represents the element-wise multiplication of two tensors.
+/// It computes the product of each corresponding element in the input tensors.
+/// The Multiply node is used in various mathematical computations and neural networks where multiplication is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// The Multiply node is defined as:
+/// f(a, b) = a * b
+/// where a and b are the input tensors.
+/// The Multiply node is typically used in conjunction with other nodes to build complex computation graphs.
+/// It is commonly used in neural networks for operations such as weight updates and loss calculations.
 pub const Multiply = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

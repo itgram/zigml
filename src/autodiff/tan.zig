@@ -3,8 +3,16 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Tangent function node.
-/// f = tan(x)
+/// Tan function node.
+/// The Tan node represents the tangent function applied to a tensor.
+/// It computes the tangent of each element in the input tensor.
+/// The Tan node is used in neural networks and mathematical computations where the tangent function is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// It is defined as:
+/// f(x) = tan(x)
+/// where x is the input tensor.
+/// The tangent function is a periodic function that oscillates between -∞ and +∞.
+/// The tangent function is often used in trigonometric calculations and periodic functions.
 pub const Tan = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

@@ -2,8 +2,15 @@ const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Subtract two nodes
-/// f = a - b
+/// Subtract function node.
+/// The Subtract node represents the subtraction operation between two tensors.
+/// It computes the element-wise difference between the two input tensors.
+/// The Subtract node is used in neural networks and mathematical computations where subtraction is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// It is defined as:
+/// f(a, b) = a - b
+/// where a and b are the input tensors.
+/// The Subtract function is often used in loss functions and optimization algorithms.
 pub const Subtract = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

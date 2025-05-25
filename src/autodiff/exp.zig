@@ -3,8 +3,15 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Exp node
-/// f = e ^ x
+/// Exp function node.
+/// The Exp node represents the exponential function applied to a tensor.
+/// It computes the exponential of each element in the input tensor.
+/// The Exp node is used in neural networks and mathematical computations where the exponential function is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// It is defined as:
+/// f(x) = e^x
+/// where x is the input tensor.
+/// The exponential function is often used in activation functions and probability distributions.
 pub const Exp = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

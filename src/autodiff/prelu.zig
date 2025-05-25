@@ -3,8 +3,17 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// PRelu Parametric ReLU activation function node.
-/// f(x, alpha) = x if x > 0 else alpha * x, where alpha is a learnable parameter
+/// PReLU (Parametric ReLU) function node.
+/// PReLU is a variant of the ReLU activation function that allows for a small, learnable slope for negative inputs.
+/// The PReLU function is defined as:
+/// f(x) = x if x > 0 else α * x
+/// - For positive inputs: f(x) = x
+/// - For negative inputs: f(x) = α * x
+/// where α is a learnable parameter (default 0.01).
+/// The alpha parameter is a learnable parameter that can be trained during the optimization process.
+/// The PReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
+/// The PReLU function is particularly useful in deep neural networks where the ReLU function may lead to dead neurons.
+/// It allows the model to learn a small slope for negative inputs, which can help improve gradient flow during training.
 pub const PRelu = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

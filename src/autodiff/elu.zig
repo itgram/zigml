@@ -3,8 +3,15 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Elu Exponential Linear Unit function node.
-/// f(x, alpha) = x if x > 0 else alpha * (exp(x) - 1), where alpha is a small constant (e.g., 0.01)
+/// Exponential Linear Unit (ELU) activation function node.
+/// The ELU function is used in neural networks to introduce non-linearity.
+/// It is similar to ReLU but allows for negative values, which can help with learning and convergence.
+/// The ELU function is defined as:
+/// f(x) = x if x > 0 else α * (exp(x) - 1)
+/// - For positive inputs: f(x) = x
+/// - For negative inputs: f(x) = α * (exp(x) - 1)
+/// where α is a small positive constant (default 0.01).
+/// The ELU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
 pub const Elu = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
@@ -31,7 +38,7 @@ pub const Elu = struct {
         self.value = Tensor.init(self.allocator, x.shape) catch null;
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv > 0) xv else self.alpha * (@exp(xv) - 1);
+            v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1);
         }
 
         std.debug.print("Elu-eval: value: {?}\n", .{self.value});

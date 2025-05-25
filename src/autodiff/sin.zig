@@ -4,7 +4,15 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Sin function node.
-/// f = sin(x)
+/// The Sin node represents the sine function applied to a tensor.
+/// It computes the sine of each element in the input tensor.
+/// The Sin node is used in neural networks and mathematical computations where the sine function is required.
+/// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
+/// It is defined as:
+/// f(x) = sin(x)
+/// where x is the input tensor.
+/// The Sine function is a periodic function that oscillates between -1 and 1.
+/// The sine function is often used in trigonometric calculations and periodic functions.
 pub const Sin = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

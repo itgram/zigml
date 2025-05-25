@@ -3,11 +3,15 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Selu Scaled Exponential Linear Unit function node.
-/// f(x, alpha, lambda) = lambda * x if x > 0 else lambda * alpha * (exp(x) - 1),
-/// where alpha is a small constant (e.g., 0.01) and lambda is a scaling factor (e.g., 1.0507)
-/// This activation function is designed to keep the mean and variance of the inputs close to zero and one, respectively.
-/// It is often used in deep neural networks to help with convergence and stability.
+/// Selu function node.
+/// The Scaled Exponential Linear Unit (SELU) activation function.
+/// It is defined as:
+/// f(x) = λ * x if x > 0 else λ * α * (exp(x) - 1)
+/// - For positive inputs: f(x) = λ * x
+/// - For negative inputs: f(x) = λ * α * (exp(x) - 1)
+/// where λ is a scaling factor (default 1.0507009873554804934193349852946)
+/// and α is a small positive constant (default 1.6732632423543772848170429916717).
+/// The SELU function is designed to self-normalize, meaning it helps maintain a mean of 0 and variance of 1 across layers.
 pub const Selu = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,

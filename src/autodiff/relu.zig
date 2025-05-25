@@ -4,7 +4,14 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Relu function node.
-/// f(x) = x if x > 0 else 0, max(0, x)
+/// The ReLU (Rectified Linear Unit) activation function
+/// It is commonly used in neural networks as an activation function.
+/// It is defined as:
+/// f(x) = x if x > 0 else 0
+/// - For positive inputs: f(x) = x
+/// - For negative inputs: f(x) = 0
+/// where x is the input tensor.
+/// The ReLU function is non-linear and allows for faster training of deep neural networks.
 pub const Relu = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
