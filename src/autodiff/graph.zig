@@ -3,13 +3,20 @@ const std = @import("std");
 pub const Add = @import("add.zig").Add;
 pub const Constant = @import("constant.zig").Constant;
 pub const Divide = @import("divide.zig").Divide;
+pub const Elu = @import("elu.zig").Elu;
 pub const Exp = @import("exp.zig").Exp;
+pub const LeakyRelu = @import("leaky_relu.zig").LeakyRelu;
+pub const Linear = @import("linear.zig").Linear;
 pub const Ln = @import("ln.zig").Ln;
 pub const Log = @import("log.zig").Log;
 pub const Multiply = @import("multiply.zig").Multiply;
 pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
+pub const PRelu = @import("prelu.zig").PRelu;
+pub const Relu = @import("relu.zig").Relu;
+pub const Selu = @import("selu.zig").Selu;
 pub const Sin = @import("sin.zig").Sin;
+pub const Step = @import("step.zig").Step;
 pub const Subtract = @import("subtract.zig").Subtract;
 pub const Tan = @import("tan.zig").Tan;
 pub const Tensor = @import("tensor.zig").Tensor;
@@ -38,9 +45,24 @@ pub const Graph = struct {
         return try Divide.init(self.allocator, a, b);
     }
 
+    /// Create an elu node
+    pub fn elu(self: *Graph, x: Node, alpha: f64) !*Elu {
+        return try Elu.init(self.allocator, x, alpha);
+    }
+
     /// Exponential of a node
     pub fn exp(self: *Graph, x: Node) !*Exp {
         return try Exp.init(self.allocator, x);
+    }
+
+    /// Create a leaky relu node
+    pub fn leakyRelu(self: *Graph, x: Node, alpha: f64) !*LeakyRelu {
+        return try LeakyRelu.init(self.allocator, x, alpha);
+    }
+
+    /// Create a linear node
+    pub fn linear(self: *Graph, x: Node) !*Linear {
+        return try Linear.init(self.allocator, x);
     }
 
     /// Ln of a node
@@ -63,9 +85,29 @@ pub const Graph = struct {
         return try Power.init(self.allocator, a, b);
     }
 
+    /// Create a parametric relu node
+    pub fn prelu(self: *Graph, x: Node, alpha: *Tensor) !*PRelu {
+        return try PRelu.init(self.allocator, x, alpha);
+    }
+
+    /// Create a relu node
+    pub fn relu(self: *Graph, x: Node) !*Relu {
+        return try Relu.init(self.allocator, x);
+    }
+
+    /// Create a selu node
+    pub fn selu(self: *Graph, x: Node, alpha: f64, lambda: f64) !*Selu {
+        return try Selu.init(self.allocator, x, alpha, lambda);
+    }
+
     /// Sine of a node
     pub fn sin(self: *Graph, x: Node) !*Sin {
         return try Sin.init(self.allocator, x);
+    }
+
+    /// Step function of a node
+    pub fn step(self: *Graph, x: Node, threshold:f64) !*Step {
+        return try Step.init(self.allocator, x, threshold);
     }
 
     /// Subtract two nodes

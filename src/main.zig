@@ -238,3 +238,50 @@ test "shared input eval and diff" {
     try std.testing.expectEqual(@as(f64, 2), y.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
 }
+
+test "relu eval and diff" {
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
+
+    // f = relu(x + y) + (y + z), where x = 2, y = 3, z = 4
+    // ∂f/∂x = 1 if x + y > 0 else 0
+    // ∂f/∂y = (1 if x + y > 0 else 0) + 1
+    // ∂f/∂z = 1
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
+
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
+
+    const zTensor = try graph.tensor(&[_]usize{1});
+    zTensor.data[0] = 4.0;
+
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
+    var z = try graph.input("z", zTensor);
+
+    // v1 = x + y
+    var v1 = try graph.add(x.node(), y.node());
+
+    // v2 = relu(v1)
+    var v2 = try graph.relu(v1.node());
+
+    // v3 = y + z
+    var v3 = try graph.add(y.node(), z.node());
+
+    // f = v2 + v3
+    const f = try graph.add(v2.node(), v3.node());
+
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 12), result.data[0]);
+
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
+
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 1), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 2), y.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
+}
