@@ -43,17 +43,17 @@ pub const Divide = struct {
         const a = self.a.eval();
         const b = self.b.eval();
 
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, b.data, dval.data) |*v, bv, dv| {
+        for (grad.data, b.data, dval.data) |*v, bv, dv| {
             v.* = dv / bv;
         }
-        self.a.diff(ndval);
+        self.a.diff(grad);
 
-        for (ndval.data, a.data, b.data, dval.data) |*v, av, bv, dv| {
+        for (grad.data, a.data, b.data, dval.data) |*v, av, bv, dv| {
             v.* = -(dv * av) / (bv * bv);
         }
-        self.b.diff(ndval);
+        self.b.diff(grad);
 
         std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

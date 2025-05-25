@@ -38,12 +38,12 @@ pub const Exp = struct {
     }
 
     pub fn diff(self: *Exp, dval: *Tensor) void {
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, self.value.?.data, dval.data) |*v, vv, dv| {
+        for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * vv;
         }
-        self.x.diff(ndval);
+        self.x.diff(grad);
 
         std.debug.print("Exp-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

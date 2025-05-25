@@ -40,13 +40,13 @@ pub const Log = struct {
     pub fn diff(self: *Log, dval: *Tensor) void {
         const x = self.x.eval();
 
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, x.data, dval.data) |*v, xv, dv| {
+        for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = dv / (xv * math.ln10);
         }
 
-        self.x.diff(ndval);
+        self.x.diff(grad);
 
         std.debug.print("Log-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

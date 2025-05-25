@@ -40,14 +40,14 @@ pub const Tan = struct {
     pub fn diff(self: *Tan, dval: *Tensor) void {
         const x = self.x.eval();
 
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, x.data, dval.data) |*v, xv, dv| {
+        for (grad.data, x.data, dval.data) |*v, xv, dv| {
             const sec2 = 1.0 / math.cos(xv);
             v.* = dv * sec2 * sec2;
         }
 
-        self.x.diff(ndval);
+        self.x.diff(grad);
 
         std.debug.print("Tan-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

@@ -40,13 +40,13 @@ pub const Subtract = struct {
     }
 
     pub fn diff(self: *Subtract, dval: *Tensor) void {
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
-        for (ndval.data, dval.data) |*v, dv| {
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        for (grad.data, dval.data) |*v, dv| {
             v.* = -dv;
         }
 
         self.a.diff(dval);
-        self.b.diff(ndval);
+        self.b.diff(grad);
 
         std.debug.print("Subtract-diff: value: {?}, dval: {d}\n", .{ self.value, dval });
     }

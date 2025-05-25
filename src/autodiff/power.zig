@@ -44,17 +44,17 @@ pub const Power = struct {
         const a = self.a.eval();
         const b = self.b.eval();
 
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, a.data, b.data, self.value.?.data, dval.data) |*v, av, bv, vv, dv| {
+        for (grad.data, a.data, b.data, self.value.?.data, dval.data) |*v, av, bv, vv, dv| {
             v.* = (dv * bv * vv) / av;
         }
-        self.a.diff(ndval);
+        self.a.diff(grad);
 
-        for (ndval.data, a.data, self.value.?.data, dval.data) |*v, av, vv, dv| {
+        for (grad.data, a.data, self.value.?.data, dval.data) |*v, av, vv, dv| {
             v.* = dv * vv * math.log(math.e, av);
         }
-        self.b.diff(ndval);
+        self.b.diff(grad);
 
         std.debug.print("Power-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

@@ -43,17 +43,17 @@ pub const Multiply = struct {
         const a = self.a.eval();
         const b = self.b.eval();
 
-        const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (ndval.data, b.data, dval.data) |*v, bv, dv| {
+        for (grad.data, b.data, dval.data) |*v, bv, dv| {
             v.* = dv * bv;
         }
-        self.a.diff(ndval);
+        self.a.diff(grad);
 
-        for (ndval.data, a.data, dval.data) |*v, av, dv| {
+        for (grad.data, a.data, dval.data) |*v, av, dv| {
             v.* = dv * av;
         }
-        self.b.diff(ndval);
+        self.b.diff(grad);
 
         std.debug.print("Multiply-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
