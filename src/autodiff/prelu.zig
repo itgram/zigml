@@ -38,7 +38,7 @@ pub const PRelu = struct {
             v.* = if (xv > 0) xv else alpha * xv;
         }
 
-        std.debug.print("PRelu-eval: value: {?}, alpha: {}\n", .{self.value, self.alpha});
+        std.debug.print("PRelu-eval: value: {?}, alpha: {}\n", .{ self.value, self.alpha });
 
         return self.value.?;
     }

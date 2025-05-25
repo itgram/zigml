@@ -1,0 +1,58 @@
+const std = @import("std");
+const math = @import("std").math;
+const Node = @import("node.zig").Node;
+const Tensor = @import("tensor.zig").Tensor;
+
+/// Sigmoid function node.
+/// f = σ(x) = 1 / (1 + exp(-x))
+/// where σ is the sigmoid function.
+/// The sigmoid function maps any real-valued number to the (0, 1) interval.
+/// It is often used in neural networks as an activation function.
+pub const Sigmoid = struct {
+    allocator: std.mem.Allocator,
+    value: ?*Tensor,
+    x: Node,
+
+    pub fn init(allocator: std.mem.Allocator, x: Node) !*Sigmoid {
+        const ptr = try allocator.create(Sigmoid);
+        ptr.allocator = allocator;
+        ptr.value = null;
+        ptr.x = x;
+
+        return ptr;
+    }
+
+    pub fn eval(self: *Sigmoid) *Tensor {
+        if (self.value) |v| {
+            return v;
+        }
+
+        const x = self.x.eval();
+
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
+
+        for (self.value.?.data, x.data) |*v, xv| {
+            v.* = 1.0 / (1.0 + math.exp(-xv));
+        }
+
+        std.debug.print("Sigmoid-eval: value: {?}\n", .{self.value});
+
+        return self.value.?;
+    }
+
+    pub fn diff(self: *Sigmoid, dval: *Tensor) void {
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+
+        for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
+            v.* = dv * vv * (1 - vv); // Derivative of sigmoid: σ'(x) = σ(x) * (1 - σ(x))
+        }
+
+        self.x.diff(grad);
+
+        std.debug.print("Sigmoid-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+    }
+
+    pub fn node(self: *Sigmoid) Node {
+        return Node.init(self);
+    }
+};

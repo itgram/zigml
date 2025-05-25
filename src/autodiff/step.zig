@@ -11,7 +11,7 @@ pub const Step = struct {
     x: Node,
     threshold: f64 = 0.0, // Default threshold value
 
-    pub fn init(allocator: std.mem.Allocator, x: Node, threshold:f64) !*Step {
+    pub fn init(allocator: std.mem.Allocator, x: Node, threshold: f64) !*Step {
         const ptr = try allocator.create(Step);
         ptr.allocator = allocator;
         ptr.value = null;
@@ -42,7 +42,7 @@ pub const Step = struct {
     pub fn diff(self: *Step, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (grad.data ) |*v| {
+        for (grad.data) |*v| {
             v.* = 0;
         }
 

@@ -2,10 +2,11 @@ const std = @import("std");
 
 pub const Add = @import("add.zig").Add;
 pub const Constant = @import("constant.zig").Constant;
+pub const Cos = @import("cos.zig").Cos;
 pub const Divide = @import("divide.zig").Divide;
 pub const Elu = @import("elu.zig").Elu;
 pub const Exp = @import("exp.zig").Exp;
-pub const LeakyRelu = @import("leaky_relu.zig").LeakyRelu;
+pub const LeakyReLU = @import("leaky_relu.zig").LeakyReLU;
 pub const Linear = @import("linear.zig").Linear;
 pub const Ln = @import("ln.zig").Ln;
 pub const Log = @import("log.zig").Log;
@@ -15,10 +16,12 @@ pub const Power = @import("power.zig").Power;
 pub const PRelu = @import("prelu.zig").PRelu;
 pub const Relu = @import("relu.zig").Relu;
 pub const Selu = @import("selu.zig").Selu;
+pub const Sigmoid = @import("sigmoid.zig").Sigmoid;
 pub const Sin = @import("sin.zig").Sin;
 pub const Step = @import("step.zig").Step;
 pub const Subtract = @import("subtract.zig").Subtract;
 pub const Tan = @import("tan.zig").Tan;
+pub const Tanh = @import("tanh.zig").Tanh;
 pub const Tensor = @import("tensor.zig").Tensor;
 pub const Variable = @import("variable.zig").Variable;
 
@@ -40,6 +43,11 @@ pub const Graph = struct {
         return try Constant.init(self.allocator, value);
     }
 
+    /// Create a cos node
+    pub fn cos(self: *Graph, x: Node) !*Cos {
+        return try Cos.init(self.allocator, x);
+    }
+
     /// Divide two nodes
     pub fn divide(self: *Graph, a: Node, b: Node) !*Divide {
         return try Divide.init(self.allocator, a, b);
@@ -56,8 +64,8 @@ pub const Graph = struct {
     }
 
     /// Create a leaky relu node
-    pub fn leakyRelu(self: *Graph, x: Node, alpha: f64) !*LeakyRelu {
-        return try LeakyRelu.init(self.allocator, x, alpha);
+    pub fn leakyReLU(self: *Graph, x: Node, alpha: f64) !*LeakyReLU {
+        return try LeakyReLU.init(self.allocator, x, alpha);
     }
 
     /// Create a linear node
@@ -100,13 +108,18 @@ pub const Graph = struct {
         return try Selu.init(self.allocator, x, alpha, lambda);
     }
 
-    /// Sine of a node
+    /// Sigmoid of a node
+    pub fn sigmoid(self: *Graph, x: Node) !*Sigmoid {
+        return try Sigmoid.init(self.allocator, x);
+    }
+
+    /// Sin of a node
     pub fn sin(self: *Graph, x: Node) !*Sin {
         return try Sin.init(self.allocator, x);
     }
 
     /// Step function of a node
-    pub fn step(self: *Graph, x: Node, threshold:f64) !*Step {
+    pub fn step(self: *Graph, x: Node, threshold: f64) !*Step {
         return try Step.init(self.allocator, x, threshold);
     }
 
@@ -123,6 +136,11 @@ pub const Graph = struct {
     /// Tangent of a node
     pub fn tan(self: *Graph, x: Node) !*Tan {
         return try Tan.init(self.allocator, x);
+    }
+
+    /// Hyperbolic tangent of a node
+    pub fn tanh(self: *Graph, x: Node) !*Tanh {
+        return try Tanh.init(self.allocator, x);
     }
 
     /// Create an input variable node

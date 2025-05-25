@@ -194,7 +194,6 @@ test "duplicate input eval and diff" {
     try std.testing.expectEqual(@as(f64, -0.7552899193628879), x.grad.data[0]);
 }
 
-
 test "shared input eval and diff" {
     var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer allocator.deinit(); // cleans up everything at once
@@ -284,4 +283,88 @@ test "relu eval and diff" {
     try std.testing.expectEqual(@as(f64, 1), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 2), y.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
+}
+
+test "leaky relu eval and diff" {
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
+
+    // f = leakyReLU(x + y, alpha) + (y + z), where x = 2, y = -3, z = 4, alpha = 0.01
+    // ∂f/∂x = alpha if x + y <= 0 else 1
+    // ∂f/∂y = (alpha if x + y <= 0 else 1) + 1
+    // ∂f/∂z = 1
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
+
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = -3.0;
+
+    const zTensor = try graph.tensor(&[_]usize{1});
+    zTensor.data[0] = 4.0;
+
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
+    var z = try graph.input("z", zTensor);
+
+    const alpha = 0.01;
+
+    // v1 = x + y
+    var v1 = try graph.add(x.node(), y.node());
+
+    // v2 = leakyReLU(v1)
+    var v2 = try graph.leakyReLU(v1.node(), alpha);
+
+    // v3 = y + z
+    var v3 = try graph.add(y.node(), z.node());
+
+    // f = v2 + v3
+    const f = try graph.add(v2.node(), v3.node());
+
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 0.99), result.data[0]);
+
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
+
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, alpha), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, alpha + 1), y.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
+}
+
+test "sigmoid eval and diff" {
+    var allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer allocator.deinit(); // cleans up everything at once
+
+    var graph = Graph.init(allocator.allocator());
+
+    // f = sigmoid(x + y), where x = 2, y = 3
+    // ∂f/∂x = sigmoid(x + y) * (1 - sigmoid(x + y))
+    // ∂f/∂y = sigmoid(x + y) * (1 - sigmoid(x + y))
+    const xTensor = try graph.tensor(&[_]usize{1});
+    xTensor.data[0] = 2.0;
+
+    const yTensor = try graph.tensor(&[_]usize{1});
+    yTensor.data[0] = 3.0;
+
+    var x = try graph.input("x", xTensor);
+    var y = try graph.input("y", yTensor);
+
+    // v1 = x + y
+    var v1 = try graph.add(x.node(), y.node());
+
+    // f = sigmoid(v1)
+    const f = try graph.sigmoid(v1.node());
+
+    const result = f.eval();
+    try std.testing.expectEqual(@as(f64, 0.9933071490757153), result.data[0]);
+
+    const dfTensor = try graph.tensor(&[_]usize{1});
+    dfTensor.data[0] = 1.0;
+
+    f.diff(dfTensor);
+    try std.testing.expectEqual(@as(f64, 0.006648056670790033), x.grad.data[0]);
+    try std.testing.expectEqual(@as(f64, 0.006648056670790033), y.grad.data[0]);
 }
