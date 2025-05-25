@@ -44,8 +44,6 @@ pub const Power = struct {
         const a = self.a.eval();
         const b = self.b.eval();
 
-        const c: f64 = if (a == math.e) 1 else math.log(math.e, a);
-
         const ndval = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
         for (ndval.data, a.data, b.data, self.value.?.data, dval.data) |*v, av, bv, vv, dv| {
@@ -53,8 +51,8 @@ pub const Power = struct {
         }
         self.a.diff(ndval);
 
-        for (ndval.data, self.value.?.data, dval.data) |*v, vv, dv| {
-            v.* = dv * vv * c;
+        for (ndval.data, a.data, self.value.?.data, dval.data) |*v, av, vv, dv| {
+            v.* = dv * vv * math.log(math.e, av);
         }
         self.b.diff(ndval);
 

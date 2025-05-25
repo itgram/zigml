@@ -1,9 +1,5 @@
 const std = @import("std");
 
-const TensorError = error{
-    ShapeMismatch,
-};
-
 pub const Tensor = struct {
     allocator: std.mem.Allocator,
     shape: []const usize,

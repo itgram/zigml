@@ -3,6 +3,7 @@ const std = @import("std");
 pub const Add = @import("add.zig").Add;
 pub const Constant = @import("constant.zig").Constant;
 pub const Divide = @import("divide.zig").Divide;
+pub const Exp = @import("exp.zig").Exp;
 pub const Ln = @import("ln.zig").Ln;
 pub const Log = @import("log.zig").Log;
 pub const Multiply = @import("multiply.zig").Multiply;
@@ -10,6 +11,7 @@ pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
 pub const Sin = @import("sin.zig").Sin;
 pub const Subtract = @import("subtract.zig").Subtract;
+pub const Tan = @import("tan.zig").Tan;
 pub const Tensor = @import("tensor.zig").Tensor;
 pub const Variable = @import("variable.zig").Variable;
 
@@ -34,6 +36,11 @@ pub const Graph = struct {
     /// Divide two nodes
     pub fn divide(self: *Graph, a: Node, b: Node) !*Divide {
         return try Divide.init(self.allocator, a, b);
+    }
+
+    /// Exponential of a node
+    pub fn exp(self: *Graph, x: Node) !*Exp {
+        return try Exp.init(self.allocator, x);
     }
 
     /// Ln of a node
@@ -69,6 +76,11 @@ pub const Graph = struct {
     /// Create an tensor
     pub fn tensor(self: *Graph, shape: []const usize) !*Tensor {
         return try Tensor.init(self.allocator, shape);
+    }
+
+    /// Tangent of a node
+    pub fn tan(self: *Graph, x: Node) !*Tan {
+        return try Tan.init(self.allocator, x);
     }
 
     /// Create an input variable node
