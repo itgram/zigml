@@ -1,0 +1,67 @@
+const std = @import("std");
+const math = @import("std").math;
+const Node = @import("node.zig").Node;
+const Tensor = @import("tensor.zig").Tensor;
+
+/// Swish function node.
+/// The Swish function is a smooth, non-monotonic activation function.
+/// The Swish function is often used in deep learning models as an activation function.
+/// It has been shown to perform better than ReLU in some cases, especially in deeper networks.
+/// The Swish function is differentiable everywhere, making it suitable for backpropagation in neural networks.
+/// It is defined as:
+/// f(x) = x * σ(x) = x / (1 + exp(-x))
+/// where σ is the sigmoid function.
+pub const Swish = struct {
+    allocator: std.mem.Allocator,
+    value: ?*Tensor,
+    x: Node,
+
+    const sqrt_2_over_pi: f32 = 0.79788456; // sqrt(2 / π)
+    const coeff: f32 = 0.044715;
+
+    pub fn init(allocator: std.mem.Allocator, x: Node) !*Swish {
+        const ptr = try allocator.create(Swish);
+        ptr.allocator = allocator;
+        ptr.value = null;
+        ptr.x = x;
+
+        return ptr;
+    }
+
+    pub fn eval(self: *Swish) *Tensor {
+        if (self.value) |v| {
+            return v;
+        }
+
+        const x = self.x.eval();
+
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
+
+        for (self.value.?.data, x.data) |*v, xv| {
+            v.* = xv / (1 + math.exp(-xv));
+        }
+
+        std.debug.print("Swish-eval: value: {?}\n", .{self.value});
+
+        return self.value.?;
+    }
+
+    pub fn diff(self: *Swish, dval: *Tensor) void {
+        const x = self.x.eval();
+
+        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+
+        for (grad.data, x.data, dval.data) |*v, xv, dv| {
+            const sig = 1 / (1 + std.math.exp(-v));
+            v.* = dv * (sig + xv * sig * (1 - sig));
+        }
+
+        self.x.diff(grad);
+
+        std.debug.print("Swish-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+    }
+
+    pub fn node(self: *Swish) Node {
+        return Node.init(self);
+    }
+};

@@ -6,6 +6,7 @@ pub const Cos = @import("cos.zig").Cos;
 pub const Divide = @import("divide.zig").Divide;
 pub const Elu = @import("elu.zig").Elu;
 pub const Exp = @import("exp.zig").Exp;
+pub const GELU = @import("gelu.zig").GELU;
 pub const LeakyReLU = @import("leaky_relu.zig").LeakyReLU;
 pub const Linear = @import("linear.zig").Linear;
 pub const Ln = @import("ln.zig").Ln;
@@ -20,6 +21,7 @@ pub const Sigmoid = @import("sigmoid.zig").Sigmoid;
 pub const Sin = @import("sin.zig").Sin;
 pub const Step = @import("step.zig").Step;
 pub const Subtract = @import("subtract.zig").Subtract;
+pub const Swish = @import("swish.zig").Swish;
 pub const Tan = @import("tan.zig").Tan;
 pub const Tanh = @import("tanh.zig").Tanh;
 pub const Tensor = @import("tensor.zig").Tensor;
@@ -65,6 +67,11 @@ pub const Graph = struct {
     /// Create an exponential node
     pub fn exp(self: *Graph, x: Node) !*Exp {
         return try Exp.init(self.allocator, x);
+    }
+
+    /// Create a gelu node
+    pub fn gelu(self: *Graph, x: Node) !*GELU {
+        return try GELU.init(self.allocator, x);
     }
 
     /// Create a leaky relu node
@@ -130,6 +137,11 @@ pub const Graph = struct {
     /// Create a subtraction node
     pub fn subtract(self: *Graph, a: Node, b: Node) !*Subtract {
         return try Subtract.init(self.allocator, a, b);
+    }
+
+    /// Create a swish node
+    pub fn swish(self: *Graph, x: Node) !*Swish {
+        return try Swish.init(self.allocator, x);
     }
 
     /// Create a tensor with the given shape
