@@ -19,6 +19,7 @@ pub const Relu = @import("relu.zig").Relu;
 pub const Selu = @import("selu.zig").Selu;
 pub const Sigmoid = @import("sigmoid.zig").Sigmoid;
 pub const Sin = @import("sin.zig").Sin;
+pub const Softmax = @import("softmax.zig").Softmax;
 pub const Step = @import("step.zig").Step;
 pub const Subtract = @import("subtract.zig").Subtract;
 pub const Swish = @import("swish.zig").Swish;
@@ -127,6 +128,11 @@ pub const Graph = struct {
     /// Create a sine node
     pub fn sin(self: *Graph, x: Node) !*Sin {
         return try Sin.init(self.allocator, x);
+    }
+
+    /// Create a softmax node
+    pub fn softmax(self: *Graph, x: Node) !*Softmax {
+        return try Softmax.init(self.allocator, x);
     }
 
     /// Create a step node
