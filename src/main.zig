@@ -18,8 +18,8 @@ test "add operation eval and diff" {
     const yTensor = try graph.tensor(&[_]usize{1});
     yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
 
     // f = x + y
     var f = try graph.add(x.node(), y.node());
@@ -50,8 +50,8 @@ test "multiply operation eval and diff" {
     const yTensor = try graph.tensor(&[_]usize{1});
     yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
 
     // f = x + y
     var f = try graph.multiply(x.node(), y.node());
@@ -82,8 +82,8 @@ test "multiply operation with subtract eval and diff" {
     const yTensor = try graph.tensor(&[_]usize{1});
     yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
 
     // v1 = x * x
     var v1 = try graph.multiply(x.node(), x.node());
@@ -120,8 +120,8 @@ test "sin operation with other operations eval and diff" {
     const yTensor = try graph.tensor(&[_]usize{1});
     yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
 
     const cTensor = try graph.tensor(&[_]usize{1});
     cTensor.data[0] = 5.0;
@@ -168,7 +168,7 @@ test "duplicate input eval and diff" {
     const xTensor = try graph.tensor(&[_]usize{1});
     xTensor.data[0] = 2.0;
 
-    var x = try graph.input("x", xTensor);
+    var x = try graph.variable("x", xTensor);
 
     const cTensor = try graph.tensor(&[_]usize{1});
     cTensor.data[0] = 2.0;
@@ -213,9 +213,9 @@ test "shared input eval and diff" {
     const zTensor = try graph.tensor(&[_]usize{1});
     zTensor.data[0] = 4.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
-    var z = try graph.input("z", zTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
+    var z = try graph.variable("z", zTensor);
 
     // v1 = x + y
     var v1 = try graph.add(x.node(), y.node());
@@ -257,9 +257,9 @@ test "relu eval and diff" {
     const zTensor = try graph.tensor(&[_]usize{1});
     zTensor.data[0] = 4.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
-    var z = try graph.input("z", zTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
+    var z = try graph.variable("z", zTensor);
 
     // v1 = x + y
     var v1 = try graph.add(x.node(), y.node());
@@ -304,9 +304,9 @@ test "leaky relu eval and diff" {
     const zTensor = try graph.tensor(&[_]usize{1});
     zTensor.data[0] = 4.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
-    var z = try graph.input("z", zTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
+    var z = try graph.variable("z", zTensor);
 
     const alpha = 0.01;
 
@@ -349,8 +349,8 @@ test "sigmoid eval and diff" {
     const yTensor = try graph.tensor(&[_]usize{1});
     yTensor.data[0] = 3.0;
 
-    var x = try graph.input("x", xTensor);
-    var y = try graph.input("y", yTensor);
+    var x = try graph.variable("x", xTensor);
+    var y = try graph.variable("y", yTensor);
 
     // v1 = x + y
     var v1 = try graph.add(x.node(), y.node());

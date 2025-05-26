@@ -166,7 +166,7 @@ pub const Graph = struct {
     }
 
     /// Create an input variable node
-    pub fn input(self: *Graph, name: []const u8, value: *Tensor) !*Variable {
+    pub fn variable(self: *Graph, name: []const u8, value: *Tensor) !*Variable {
         return try Variable.init(self.allocator, name, value);
     }
 };
