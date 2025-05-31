@@ -131,8 +131,8 @@ pub const Graph = struct {
     }
 
     /// Create a softmax node
-    pub fn softmax(self: *Graph, x: Node) !*Softmax {
-        return try Softmax.init(self.allocator, x);
+    pub fn softmax(self: *Graph, x: Node, axis: usize) !*Softmax {
+        return try Softmax.init(self.allocator, x, axis);
     }
 
     /// Create a step node
