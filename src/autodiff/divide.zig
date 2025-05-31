@@ -3,48 +3,48 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Divide function node.
-/// where a and b are nodes that evaluate to tensors.
+/// where x and y are nodes that evaluate to tensors.
 /// The Divide node computes the element-wise division of the tensors produced by its two input nodes.
 /// It is used to represent division operations in the computation graph.
 /// The Divide node is a fundamental operation in many neural networks and mathematical computations.
 /// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
 /// The Divide node is defined as:
-/// f(a, b) = a / b
-/// where a is the numerator tensor and b is the denominator tensor.
+/// f(x, y) = x / y
+/// where x is the numerator tensor and y is the denominator tensor.
 /// The Divide node is typically used in conjunction with other nodes to build complex computation graphs.
 pub const Divide = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    a: Node,
-    b: Node,
+    x: Node,
+    y: Node,
 
-    pub fn init(allocator: std.mem.Allocator, a: Node, b: Node) !*Divide {
+    pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Divide {
         const ptr = try allocator.create(Divide);
         ptr.allocator = allocator;
         ptr.value = null;
-        ptr.a = a;
-        ptr.b = b;
+        ptr.x = x;
+        ptr.y = y;
 
         return ptr;
     }
 
     /// Evaluate the divide function.
     /// The divide function is defined as:
-    /// f(a, b) = a / b
-    /// where a and b are the input tensors.
+    /// f(x, y) = x / y
+    /// where x and y are the input tensors.
     /// The divide function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn eval(self: *Divide) *Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const a = self.a.eval();
-        const b = self.b.eval();
+        const x = self.x.eval();
+        const y = self.y.eval();
 
-        self.value = Tensor.init(self.allocator, a.shape) catch null;
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
 
-        for (self.value.?.data, a.data, b.data) |*v, av, bv| {
-            v.* = av / bv;
+        for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
+            v.* = xv / yv;
         }
 
         std.debug.print("Divide-eval: value: {?}\n", .{self.value});
@@ -54,25 +54,24 @@ pub const Divide = struct {
 
     /// Compute the gradient of the divide function.
     /// The gradient of the divide function is defined as:
-    /// ∂f / ∂a = 1 / b
-    /// ∂f / ∂b = -a / b^2
-    /// where a and b are the input tensors.
+    /// ∂f / ∂x = 1 / y
+    /// ∂f / ∂y = -x / (y * y)
+    /// where x and y are the input tensors.
     /// The gradient of the divide function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Divide, dval: *Tensor) void {
-        const a = self.a.eval();
-        const b = self.b.eval();
+        const x = self.x.eval();
+        const y = self.y.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (grad.data, b.data, dval.data) |*v, bv, dv| {
-            v.* = dv / bv;
+        for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
+            gx.* = dv / yv;
+            gy.* = -dv * xv / (yv * yv);
         }
-        self.a.diff(grad);
 
-        for (grad.data, a.data, b.data, dval.data) |*v, av, bv, dv| {
-            v.* = -(dv * av) / (bv * bv);
-        }
-        self.b.diff(grad);
+        self.x.diff(grad_x);
+        self.y.diff(grad_y);
 
         std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

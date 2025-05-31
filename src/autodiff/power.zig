@@ -4,46 +4,45 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
 /// Power function node.
-/// where a and b are nodes representing tensors.
+/// where x and y are nodes representing tensors.
 /// The Power node is used to compute the element-wise power of two tensors.
 /// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
 /// The Power node is defined as:
-/// f(a, b) = a^b
-/// where a is the base tensor and b is the exponent tensor.
+/// f(x, y) = x^y
+/// where x is the base tensor and y is the exponent tensor.
 /// The Power node is typically used in neural networks for operations such as exponentiation and activation functions.
 pub const Power = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    a: Node,
-    b: Node,
+    x: Node,
+    y: Node,
 
-    pub fn init(allocator: std.mem.Allocator, a: Node, b: Node) !*Power {
+    pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Power {
         const ptr = try allocator.create(Power);
         ptr.allocator = allocator;
         ptr.value = null;
-        ptr.a = a;
-        ptr.b = b;
+        ptr.x = x;
+        ptr.y = y;
 
         return ptr;
     }
 
     /// Evaluate the power function.
     /// The power function is defined as:
-    /// f(a, b) = a^b
-    /// where a is the base tensor and b is the exponent tensor.
-    /// The power function is often used in neural networks for operations such as exponentiation and activation functions.
+    /// f(x, y) = x^y
+    /// where x and y are the input tensors.
     pub fn eval(self: *Power) *Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const a = self.a.eval();
-        const b = self.b.eval();
+        const x = self.x.eval();
+        const y = self.y.eval();
 
-        self.value = Tensor.init(self.allocator, a.shape) catch null;
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
 
-        for (self.value.?.data, a.data, b.data) |*v, av, bv| {
-            v.* = math.pow(av, bv);
+        for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
+            v.* = math.pow(xv, yv);
         }
 
         std.debug.print("Power-eval: value: {?}\n", .{self.value});
@@ -53,25 +52,24 @@ pub const Power = struct {
 
     /// Compute the gradient of the power function.
     /// The gradient of the power function is defined as:
-    /// ∂f / ∂a = (∂f / ∂x) * (∂x / ∂a)
-    /// ∂f / ∂b = (∂f / ∂x) * (∂x / ∂b)
-    /// where x is the input tensor.
+    /// ∂f / ∂x = y * x^(y-1)
+    /// ∂f / ∂y = x^y * ln(x)
+    /// where x and y are the input tensors.
     /// The gradient of the power function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Power, dval: *Tensor) void {
-        const a = self.a.eval();
-        const b = self.b.eval();
+        const x = self.x.eval();
+        const y = self.y.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (grad.data, a.data, b.data, self.value.?.data, dval.data) |*v, av, bv, vv, dv| {
-            v.* = (dv * bv * vv) / av;
+        for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
+            gx.* = dv * yv * math.pow(xv, yv - 1);
+            gy.* = dv * math.pow(xv, yv) * math.ln(xv);
         }
-        self.a.diff(grad);
 
-        for (grad.data, a.data, self.value.?.data, dval.data) |*v, av, vv, dv| {
-            v.* = dv * vv * math.log(math.e, av);
-        }
-        self.b.diff(grad);
+        self.x.diff(grad_x);
+        self.y.diff(grad_y);
 
         std.debug.print("Power-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

@@ -8,42 +8,42 @@ const Tensor = @import("tensor.zig").Tensor;
 /// The Subtract node is used in neural networks and mathematical computations where subtraction is required.
 /// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
 /// It is defined as:
-/// f(a, b) = a - b
-/// where a and b are the input tensors.
+/// f(x, y) = x - y
+/// where x and y are the input tensors.
 /// The Subtract function is often used in loss functions and optimization algorithms.
 pub const Subtract = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    a: Node,
-    b: Node,
+    x: Node,
+    y: Node,
 
-    pub fn init(allocator: std.mem.Allocator, a: Node, b: Node) !*Subtract {
+    pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Subtract {
         const ptr = try allocator.create(Subtract);
         ptr.allocator = allocator;
         ptr.value = null;
-        ptr.a = a;
-        ptr.b = b;
+        ptr.x = x;
+        ptr.y = y;
 
         return ptr;
     }
 
     /// Evaluate the subtract function.
     /// The subtract function is defined as:
-    /// f(a, b) = a - b
-    /// where a and b are the input tensors.
+    /// f(x, y) = x - y
+    /// where x and y are the input tensors.
     /// The subtract function is often used in loss functions and optimization algorithms.
     pub fn eval(self: *Subtract) *Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const a = self.a.eval();
-        const b = self.b.eval();
+        const x = self.x.eval();
+        const y = self.y.eval();
 
-        self.value = Tensor.init(self.allocator, a.shape) catch null;
+        self.value = Tensor.init(self.allocator, x.shape) catch null;
 
-        for (self.value.?.data, a.data, b.data) |*v, av, bv| {
-            v.* = av - bv;
+        for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
+            v.* = xv - yv;
         }
 
         std.debug.print("Subtract-eval: value: {?}\n", .{self.value});
@@ -53,20 +53,23 @@ pub const Subtract = struct {
 
     /// Compute the gradient of the subtract function.
     /// The gradient of the subtract function is defined as:
-    /// ∂f / ∂a = 1
-    /// ∂f / ∂b = -1
-    /// where a and b are the input tensors.
+    /// ∂f / ∂x = 1
+    /// ∂f / ∂y = -1
+    /// where x and y are the input tensors.
     /// The gradient of the subtract function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Subtract, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
-        for (grad.data, dval.data) |*v, dv| {
-            v.* = -dv;
+        const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
+
+        for (grad_x.data, grad_y.data, dval.data) |*gx, *gy, dv| {
+            gx.* = dv;
+            gy.* = -dv;
         }
 
-        self.a.diff(dval);
-        self.b.diff(grad);
+        self.x.diff(grad_x);
+        self.y.diff(grad_y);
 
-        std.debug.print("Subtract-diff: value: {?}, dval: {d}\n", .{ self.value, dval });
+        std.debug.print("Subtract-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     pub fn node(self: *Subtract) Node {

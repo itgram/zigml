@@ -41,8 +41,8 @@ pub const Graph = struct {
     }
 
     /// Create an addition node
-    pub fn add(self: *Graph, a: Node, b: Node) !*Add {
-        return try Add.init(self.allocator, a, b);
+    pub fn add(self: *Graph, x: Node, y: Node) !*Add {
+        return try Add.init(self.allocator, x, y);
     }
 
     /// Create a constant node
@@ -56,8 +56,8 @@ pub const Graph = struct {
     }
 
     /// Create a division node
-    pub fn divide(self: *Graph, a: Node, b: Node) !*Divide {
-        return try Divide.init(self.allocator, a, b);
+    pub fn divide(self: *Graph, x: Node, y: Node) !*Divide {
+        return try Divide.init(self.allocator, x, y);
     }
 
     /// Create an elu node
@@ -96,13 +96,13 @@ pub const Graph = struct {
     }
 
     /// Create a multiplication node
-    pub fn multiply(self: *Graph, a: Node, b: Node) !*Multiply {
-        return try Multiply.init(self.allocator, a, b);
+    pub fn multiply(self: *Graph, x: Node, y: Node) !*Multiply {
+        return try Multiply.init(self.allocator, x, y);
     }
 
     /// Create a power node
-    pub fn power(self: *Graph, a: Node, b: Node) !*Power {
-        return try Power.init(self.allocator, a, b);
+    pub fn power(self: *Graph, x: Node, y: Node) !*Power {
+        return try Power.init(self.allocator, x, y);
     }
 
     /// Create a parametric relu node
@@ -141,8 +141,8 @@ pub const Graph = struct {
     }
 
     /// Create a subtraction node
-    pub fn subtract(self: *Graph, a: Node, b: Node) !*Subtract {
-        return try Subtract.init(self.allocator, a, b);
+    pub fn subtract(self: *Graph, x: Node, y: Node) !*Subtract {
+        return try Subtract.init(self.allocator, x, y);
     }
 
     /// Create a swish node
