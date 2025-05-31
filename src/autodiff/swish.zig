@@ -28,6 +28,13 @@ pub const Swish = struct {
         return ptr;
     }
 
+    /// Evaluate the Swish function.
+    /// The Swish function is defined as:
+    /// f(x) = x * σ(x) = x / (1 + exp(-x))
+    /// where σ is the sigmoid function.
+    /// The Swish function is a smooth, non-monotonic activation function.
+    /// The Swish function is often used in deep learning models as an activation function.
+    /// It has been shown to perform better than ReLU in some cases, especially in deeper networks.
     pub fn eval(self: *Swish) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +53,11 @@ pub const Swish = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the Swish function.
+    /// The gradient of the Swish function is defined as:
+    /// ∂f / ∂x = σ(x) + x * σ(x) * (1 - σ(x))
+    /// where σ is the sigmoid function.
+    /// The gradient of the Swish function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Swish, dval: *Tensor) void {
         const x = self.x.eval();
 

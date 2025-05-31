@@ -34,6 +34,13 @@ pub const PRelu = struct {
         return ptr;
     }
 
+    /// Evaluate the PReLU function.
+    /// The PReLU function is defined as:
+    /// f(x) = x if x > 0 else α * x
+    /// where α is a learnable parameter (default 0.01).
+    /// The PReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
+    /// The PReLU function is particularly useful in deep neural networks where the ReLU function may lead to dead neurons.
+    /// It allows the model to learn a small slope for negative inputs, which can help improve gradient flow during training.
     pub fn eval(self: *PRelu) *Tensor {
         if (self.value) |v| {
             return v;
@@ -52,6 +59,12 @@ pub const PRelu = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the PReLU function.
+    /// The gradient of the PReLU function is defined as:
+    /// ∂f / ∂x = 1 if x > 0 else α
+    /// ∂f / ∂α = x if x > 0 else 0
+    /// where α is a learnable parameter (default 0.01).
+    /// The gradient of the PReLU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *PRelu, dval: *Tensor) void {
         const x = self.x.eval();
 

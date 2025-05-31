@@ -28,6 +28,11 @@ pub const Add = struct {
         return ptr;
     }
 
+    /// Evaluate the add function.
+    /// The add function is defined as:
+    /// f(a, b) = a + b
+    /// where a and b are the input tensors.
+    /// The add function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn eval(self: *Add) *Tensor {
         if (self.value) |v| {
             return v;
@@ -47,6 +52,12 @@ pub const Add = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the add function.
+    /// The gradient of the add function is defined as:
+    /// ∂f / ∂a = 1
+    /// ∂f / ∂b = 1
+    /// where a and b are the input tensors.
+    /// The gradient of the add function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Add, dval: *Tensor) void {
         self.a.diff(dval);
         self.b.diff(dval);

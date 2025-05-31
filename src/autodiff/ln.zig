@@ -27,6 +27,11 @@ pub const Ln = struct {
         return ptr;
     }
 
+    /// Evaluate the natural logarithm function.
+    /// The natural logarithm function is defined as:
+    /// f(x) = ln(x)
+    /// where x is the input tensor.
+    /// The natural logarithm is often used in optimization problems and loss functions.
     pub fn eval(self: *Ln) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +50,10 @@ pub const Ln = struct {
         return self.value.?;
     }
 
+    /// The gradient of the natural logarithm function is defined as:
+    /// ∂f / ∂x = 1 / x
+    /// where x is the input tensor.
+    /// The gradient of the natural logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Ln, dval: *Tensor) void {
         const x = self.x.eval();
 

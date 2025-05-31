@@ -34,12 +34,24 @@ pub const Variable = struct {
         return ptr;
     }
 
+    /// Evaluate the variable.
+    /// The variable is defined as:
+    /// f(x) = x
+    /// where x is the input tensor.
+    /// The variable is often used in neural networks to represent weights and biases.
+    /// It is also used in optimization algorithms to update parameters during training.
+    /// The variable is differentiable, allowing gradients to be computed for backpropagation.
     pub fn eval(self: *Variable) *Tensor {
         std.debug.print("Variable-eval: {s}, value: {}, grad: {}\n", .{ self.name, self.value, self.grad });
 
         return self.value;
     }
 
+    /// Compute the gradient of the variable.
+    /// The gradient of the variable is defined as:
+    /// ∂f / ∂x = 1
+    /// where x is the input tensor.
+    /// The gradient of the variable is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Variable, dval: *Tensor) void {
         for (self.grad.data, dval.data) |*g, dv| {
             g.* += dv;

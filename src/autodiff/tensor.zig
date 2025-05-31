@@ -51,16 +51,6 @@ pub const Tensor = struct {
         return strides;
     }
 
-    /// Get flat index offset of a slice at `axis` with slice index `i`.
-    pub fn sliceOffset(self: *Tensor, axis: usize, slice_index: usize) usize {
-        return slice_index * self.strides[axis];
-    }
-
-    /// Get the stride to jump between elements along `axis`.
-    pub fn axisStride(self: *Tensor, axis: usize) usize {
-        return self.strides[axis];
-    }
-
     /// Reshapes the tensor to a new shape. Returns a new Tensor struct with shared data.
     pub fn reshape(self: *Tensor, new_shape: []const usize) !*Tensor {
         const old_numel = Tensor.numel(self.shape);

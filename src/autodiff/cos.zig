@@ -27,6 +27,12 @@ pub const Cos = struct {
         return ptr;
     }
 
+    /// Evaluate the cosine function.
+    /// The cosine function is defined as:
+    /// f(x) = cos(x)
+    /// where x is the input tensor.
+    /// The cosine function is a periodic function that oscillates between -1 and 1.
+    /// The cosine function is often used in trigonometric calculations and periodic functions.
     pub fn eval(self: *Cos) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +51,11 @@ pub const Cos = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the cosine function.
+    /// The gradient of the cosine function is defined as:
+    /// ∂f / ∂x = -sin(x)
+    /// where x is the input tensor.
+    /// The gradient of the cosine function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Cos, dval: *Tensor) void {
         const x = self.x.eval();
 

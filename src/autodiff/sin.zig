@@ -27,6 +27,12 @@ pub const Sin = struct {
         return ptr;
     }
 
+    /// Evaluate the sine function.
+    /// The sine function is defined as:
+    /// f(x) = sin(x)
+    /// where x is the input tensor.
+    /// The sine function is a periodic function that oscillates between -1 and 1.
+    /// The sine function is often used in trigonometric calculations and periodic functions.
     pub fn eval(self: *Sin) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +51,11 @@ pub const Sin = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the sine function.
+    /// The gradient of the sine function is defined as:
+    /// ∂f / ∂x = cos(x)
+    /// where x is the input tensor.
+    /// The gradient of the sine function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Sin, dval: *Tensor) void {
         const x = self.x.eval();
 

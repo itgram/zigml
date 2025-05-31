@@ -28,6 +28,11 @@ pub const Divide = struct {
         return ptr;
     }
 
+    /// Evaluate the divide function.
+    /// The divide function is defined as:
+    /// f(a, b) = a / b
+    /// where a and b are the input tensors.
+    /// The divide function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn eval(self: *Divide) *Tensor {
         if (self.value) |v| {
             return v;
@@ -47,6 +52,12 @@ pub const Divide = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the divide function.
+    /// The gradient of the divide function is defined as:
+    /// ∂f / ∂a = 1 / b
+    /// ∂f / ∂b = -a / b^2
+    /// where a and b are the input tensors.
+    /// The gradient of the divide function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Divide, dval: *Tensor) void {
         const a = self.a.eval();
         const b = self.b.eval();

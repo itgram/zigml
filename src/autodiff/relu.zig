@@ -26,6 +26,11 @@ pub const Relu = struct {
         return ptr;
     }
 
+    /// Evaluate the ReLU function.
+    /// The ReLU function is defined as:
+    /// f(x) = x if x > 0 else 0
+    /// where x is the input tensor.
+    /// The ReLU function is non-linear and allows for faster training of deep neural networks.
     pub fn eval(self: *Relu) *Tensor {
         if (self.value) |v| {
             return v;
@@ -44,6 +49,11 @@ pub const Relu = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the ReLU function.
+    /// The gradient of the ReLU function is defined as:
+    /// ∂f / ∂x = 1 if x > 0 else 0
+    /// where x is the input tensor.
+    /// The gradient of the ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Relu, dval: *Tensor) void {
         const x = self.x.eval();
 

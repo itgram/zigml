@@ -29,6 +29,12 @@ pub const Linear = struct {
         return ptr;
     }
 
+    /// Evaluate the linear function.
+    /// The linear function is defined as:
+    /// f(x) = x
+    /// where x is the input tensor.
+    /// The linear function is often used in the output layer of neural networks for regression tasks.
+    /// It is also used in the hidden layers of neural networks when no activation function is applied.
     pub fn eval(self: *Linear) *Tensor {
         if (self.value) |v| {
             return v;
@@ -47,6 +53,11 @@ pub const Linear = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the linear function.
+    /// The gradient of the linear function is defined as:
+    /// ∂f / ∂x = 1
+    /// where x is the input tensor.
+    /// The gradient of the linear function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Linear, dval: *Tensor) void {
         self.x.diff(dval);
 

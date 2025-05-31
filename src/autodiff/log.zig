@@ -27,6 +27,11 @@ pub const Log = struct {
         return ptr;
     }
 
+    /// Evaluate the logarithm function.
+    /// The logarithm function is defined as:
+    /// f(x) = log10(x)
+    /// where x is the input tensor.
+    /// The logarithm function is often used in optimization problems and loss functions.
     pub fn eval(self: *Log) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +50,11 @@ pub const Log = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the logarithm function.
+    /// The gradient of the logarithm function is defined as:
+    /// ∂f / ∂x = 1 / (x * ln(10))
+    /// where x is the input tensor.
+    /// The gradient of the logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Log, dval: *Tensor) void {
         const x = self.x.eval();
 

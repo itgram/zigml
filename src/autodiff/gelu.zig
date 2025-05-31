@@ -29,6 +29,11 @@ pub const GELU = struct {
         return ptr;
     }
 
+    /// Evaluate the GELU function.
+    /// The GELU function is defined as:
+    /// f(x) = 0.5 * x * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3)))
+    /// where x is the input tensor.
+    /// The GELU function is a smooth approximation of the ReLU function.
     pub fn eval(self: *GELU) *Tensor {
         if (self.value) |v| {
             return v;
@@ -47,6 +52,11 @@ pub const GELU = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the GELU function.
+    /// The gradient of the GELU function is defined as:
+    /// ∂f / ∂x = 0.5 * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3))) + 0.5 * x * (1 - tanh(sqrt(2 / π) * (x + 0.044715 * x^3))^2) * sqrt(2 / π) * (1 + 3 * 0.044715 * x^2)
+    /// where x is the input tensor.
+    /// The gradient of the GELU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *GELU, dval: *Tensor) void {
         const x = self.x.eval();
 

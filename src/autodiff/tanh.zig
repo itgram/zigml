@@ -28,6 +28,12 @@ pub const Tanh = struct {
         return ptr;
     }
 
+    /// Evaluate the hyperbolic tangent function.
+    /// The hyperbolic tangent function is defined as:
+    /// f(x) = tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))
+    /// where e is the base of the natural logarithm.
+    /// and x is the input tensor.
+    /// The hyperbolic tangent function is a smooth, continuous function that is symmetric around the origin.
     pub fn eval(self: *Tanh) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +52,11 @@ pub const Tanh = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the hyperbolic tangent function.
+    /// The gradient of the hyperbolic tangent function is defined as:
+    /// ∂f / ∂x = 1 - tanh^2(x)
+    /// where x is the input tensor.
+    /// The gradient of the hyperbolic tangent function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Tanh, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 

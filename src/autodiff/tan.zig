@@ -27,6 +27,12 @@ pub const Tan = struct {
         return ptr;
     }
 
+    /// Evaluate the tangent function.
+    /// The tangent function is defined as:
+    /// f(x) = tan(x)
+    /// where x is the input tensor.
+    /// The tangent function is a periodic function that oscillates between -∞ and +∞.
+    /// The tangent function is often used in trigonometric calculations and periodic functions.
     pub fn eval(self: *Tan) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +51,11 @@ pub const Tan = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the tangent function.
+    /// The gradient of the tangent function is defined as:
+    /// ∂f / ∂x = sec^2(x)
+    /// where x is the input tensor.
+    /// The gradient of the tangent function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Tan, dval: *Tensor) void {
         const x = self.x.eval();
 

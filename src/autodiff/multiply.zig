@@ -28,6 +28,11 @@ pub const Multiply = struct {
         return ptr;
     }
 
+    /// Evaluate the multiply function.
+    /// The multiply function is defined as:
+    /// f(a, b) = a * b
+    /// where a and b are the input tensors.
+    /// The multiply function is often used in conjunction with other nodes to build complex computation graphs.
     pub fn eval(self: *Multiply) *Tensor {
         if (self.value) |v| {
             return v;
@@ -47,6 +52,12 @@ pub const Multiply = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the multiply function.
+    /// The gradient of the multiply function is defined as:
+    /// ∂f / ∂a = b
+    /// ∂f / ∂b = a
+    /// where a and b are the input tensors.
+    /// The gradient of the multiply function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Multiply, dval: *Tensor) void {
         const a = self.a.eval();
         const b = self.b.eval();

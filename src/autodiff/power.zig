@@ -27,6 +27,11 @@ pub const Power = struct {
         return ptr;
     }
 
+    /// Evaluate the power function.
+    /// The power function is defined as:
+    /// f(a, b) = a^b
+    /// where a is the base tensor and b is the exponent tensor.
+    /// The power function is often used in neural networks for operations such as exponentiation and activation functions.
     pub fn eval(self: *Power) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +51,12 @@ pub const Power = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the power function.
+    /// The gradient of the power function is defined as:
+    /// ∂f / ∂a = (∂f / ∂x) * (∂x / ∂a)
+    /// ∂f / ∂b = (∂f / ∂x) * (∂x / ∂b)
+    /// where x is the input tensor.
+    /// The gradient of the power function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Power, dval: *Tensor) void {
         const a = self.a.eval();
         const b = self.b.eval();

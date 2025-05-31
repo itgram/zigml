@@ -25,6 +25,13 @@ pub const Sigmoid = struct {
         return ptr;
     }
 
+    /// Evaluate the Sigmoid function.
+    /// The Sigmoid function is defined as:
+    /// f(x) = 1 / (1 + exp(-x))
+    /// where x is the input tensor.
+    /// The Sigmoid function maps any real-valued number to the (0, 1) interval.
+    /// The Sigmoid function is commonly used in neural networks as an activation function.
+    /// It is particularly useful for binary classification tasks.
     pub fn eval(self: *Sigmoid) *Tensor {
         if (self.value) |v| {
             return v;
@@ -43,6 +50,11 @@ pub const Sigmoid = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the Sigmoid function.
+    /// The gradient of the Sigmoid function is defined as:
+    /// ∂f / ∂x = σ(x) * (1 - σ(x))
+    /// where x is the input tensor.
+    /// The gradient of the Sigmoid function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Sigmoid, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 

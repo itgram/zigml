@@ -30,6 +30,12 @@ pub const Selu = struct {
         return ptr;
     }
 
+    /// Evaluate the SELU function.
+    /// The SELU function is defined as:
+    /// f(x) = λ * x if x > 0 else λ * α * (exp(x) - 1)
+    /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
+    /// and α is a small positive constant (default 1.6732632423543772848170429916717).
+    /// The SELU function is designed to self-normalize, meaning it helps maintain a mean of 0 and variance of 1 across layers.
     pub fn eval(self: *Selu) *Tensor {
         if (self.value) |v| {
             return v;
@@ -48,6 +54,12 @@ pub const Selu = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the SELU function.
+    /// The gradient of the SELU function is defined as:
+    /// ∂f / ∂x = λ if x > 0 else λ * α * exp(x)
+    /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
+    /// and α is a small positive constant (default 1.6732632423543772848170429916717).
+    /// The gradient of the SELU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Selu, dval: *Tensor) void {
         const x = self.x.eval();
 

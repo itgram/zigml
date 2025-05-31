@@ -19,12 +19,22 @@ pub const Constant = struct {
         return ptr;
     }
 
+    /// Evaluate the constant function.
+    /// The constant function is defined as:
+    /// f(x) = value
+    /// where x is the input tensor.
+    /// The constant function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn eval(self: *Constant) *Tensor {
         std.debug.print("Constant-eval: {}\n", .{self.value});
 
         return self.value;
     }
 
+    /// Compute the gradient of the constant function.
+    /// The gradient of the constant function is defined as:
+    /// ∂f / ∂x = 0
+    /// where x is the input tensor.
+    /// The gradient of the constant function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Constant, dval: *Tensor) void {
         std.debug.print("Constant-diff: {}, dval: {}\n", .{ self.value, dval });
     }

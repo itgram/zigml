@@ -27,6 +27,11 @@ pub const Subtract = struct {
         return ptr;
     }
 
+    /// Evaluate the subtract function.
+    /// The subtract function is defined as:
+    /// f(a, b) = a - b
+    /// where a and b are the input tensors.
+    /// The subtract function is often used in loss functions and optimization algorithms.
     pub fn eval(self: *Subtract) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +51,12 @@ pub const Subtract = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the subtract function.
+    /// The gradient of the subtract function is defined as:
+    /// ∂f / ∂a = 1
+    /// ∂f / ∂b = -1
+    /// where a and b are the input tensors.
+    /// The gradient of the subtract function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Subtract, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
         for (grad.data, dval.data) |*v, dv| {

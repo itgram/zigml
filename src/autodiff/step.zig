@@ -27,6 +27,13 @@ pub const Step = struct {
         return ptr;
     }
 
+    /// Evaluate the step function.
+    /// The step function is defined as:
+    /// f(x) = 1 if x >= threshold, else 0
+    /// where x is the input tensor and threshold is a configurable value (default is 0.0).
+    /// The step function is often used in binary classification tasks and as an activation function in neural networks.
+    /// It is not differentiable at the threshold, but it can be used in contexts where a hard thresholding is required.
+    /// The step function is useful for creating binary outputs from continuous inputs.
     pub fn eval(self: *Step) *Tensor {
         if (self.value) |v| {
             return v;
@@ -45,6 +52,11 @@ pub const Step = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the step function.
+    /// The gradient of the step function is defined as:
+    /// ∂f / ∂x = 0
+    /// where x is the input tensor.
+    /// The gradient of the step function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Step, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 

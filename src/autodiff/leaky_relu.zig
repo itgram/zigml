@@ -28,6 +28,11 @@ pub const LeakyReLU = struct {
         return ptr;
     }
 
+    /// Evaluate the Leaky ReLU function.
+    /// The Leaky ReLU function is defined as:
+    /// f(x) = x if x > 0 else α * x
+    /// where α is a small positive constant (default 0.01).
+    /// The Leaky ReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
     pub fn eval(self: *LeakyReLU) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +51,11 @@ pub const LeakyReLU = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the Leaky ReLU function.
+    /// The gradient of the Leaky ReLU function is defined as:
+    /// ∂f / ∂x = 1 if x > 0 else α
+    /// where α is a small positive constant (default 0.01).
+    /// The gradient of the Leaky ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *LeakyReLU, dval: *Tensor) void {
         const x = self.x.eval();
 

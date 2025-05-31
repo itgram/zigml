@@ -28,6 +28,11 @@ pub const Elu = struct {
         return ptr;
     }
 
+    /// Evaluate the ELU function.
+    /// The ELU function is defined as:
+    /// f(x) = x if x > 0 else α * (exp(x) - 1)
+    /// where α is a small positive constant (default 0.01).
+    /// The ELU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
     pub fn eval(self: *Elu) *Tensor {
         if (self.value) |v| {
             return v;
@@ -46,6 +51,11 @@ pub const Elu = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the ELU function.
+    /// The gradient of the ELU function is defined as:
+    /// ∂f / ∂x = 1 if x > 0 else α * exp(x)
+    /// where α is a small positive constant (default 0.01).
+    /// The gradient of the ELU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Elu, dval: *Tensor) void {
         const x = self.x.eval();
 

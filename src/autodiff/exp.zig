@@ -26,6 +26,11 @@ pub const Exp = struct {
         return ptr;
     }
 
+    /// Evaluate the exponential function.
+    /// The exponential function is defined as:
+    /// f(x) = e^x
+    /// where x is the input tensor.
+    /// The exponential function is often used in activation functions and probability distributions.
     pub fn eval(self: *Exp) *Tensor {
         if (self.value) |v| {
             return v;
@@ -44,6 +49,11 @@ pub const Exp = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the exponential function.
+    /// The gradient of the exponential function is defined as:
+    /// ∂f / ∂x = e^x
+    /// where x is the input tensor.
+    /// The gradient of the exponential function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Exp, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
