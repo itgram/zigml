@@ -68,6 +68,16 @@ pub const Sigmoid = struct {
         std.debug.print("Sigmoid-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Sigmoid) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this sigmoid node as a generic Node interface.
     pub fn node(self: *Sigmoid) Node {
         return Node.init(self);

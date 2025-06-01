@@ -40,6 +40,12 @@ pub const Constant = struct {
         std.debug.print("Constant-diff: {}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state.
+    /// For constant nodes, this is a no-op since they don't have any cached values.
+    pub fn reset(_: *Constant) void {
+        // Constants don't need to be reset as they don't have any cached values
+    }
+
     /// Returns this constant node as a generic Node interface.
     pub fn node(self: *Constant) Node {
         return Node.init(self);

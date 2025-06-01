@@ -69,6 +69,16 @@ pub const ReLU = struct {
         std.debug.print("ReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *ReLU) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this ReLU node as a generic Node interface.
     pub fn node(self: *ReLU) Node {
         return Node.init(self);

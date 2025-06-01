@@ -65,6 +65,16 @@ pub const Linear = struct {
         std.debug.print("Linear-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Linear) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this linear node as a generic Node interface.
     pub fn node(self: *Linear) Node {
         return Node.init(self);

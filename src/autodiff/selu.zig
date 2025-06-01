@@ -75,6 +75,16 @@ pub const SELU = struct {
         std.debug.print("SELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *SELU) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this SELU node as a generic Node interface.
     pub fn node(self: *SELU) Node {
         return Node.init(self);

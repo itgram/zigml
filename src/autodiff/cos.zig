@@ -63,12 +63,22 @@ pub const Cos = struct {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            v.* = dv * -math.sin(xv); // derivative of cos is -sin
+            v.* = -dv * math.sin(xv);
         }
 
         self.x.diff(grad);
 
         std.debug.print("Cos-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+    }
+
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Cos) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
     }
 
     /// Returns this cosine node as a generic Node interface.

@@ -77,7 +77,18 @@ pub const Multiply = struct {
         std.debug.print("Multiply-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    /// Returns this multiplication node as a generic Node interface.
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Multiply) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+        self.y.reset();
+    }
+
+    /// Returns this multiply node as a generic Node interface.
     pub fn node(self: *Multiply) Node {
         return Node.init(self);
     }

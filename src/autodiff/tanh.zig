@@ -61,13 +61,22 @@ pub const Tanh = struct {
     pub fn diff(self: *Tanh, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
 
-        for (grad.data, self.data, dval.data) |*v, vv, dv| {
-            v.* = dv * (1 - vv * vv); // derivative of tanh is 1 - tanh^2
+        for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
+            v.* = dv * (1 - vv * vv);
         }
-
         self.x.diff(grad);
 
         std.debug.print("Tanh-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+    }
+
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Tanh) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
     }
 
     /// Returns this tanh node as a generic Node interface.

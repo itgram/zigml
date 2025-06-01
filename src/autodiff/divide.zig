@@ -77,7 +77,18 @@ pub const Divide = struct {
         std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    /// Returns this division node as a generic Node interface.
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Divide) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+        self.y.reset();
+    }
+
+    /// Returns this divide node as a generic Node interface.
     pub fn node(self: *Divide) Node {
         return Node.init(self);
     }

@@ -69,6 +69,16 @@ pub const Ln = struct {
         std.debug.print("Ln-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Ln) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this natural logarithm node as a generic Node interface.
     pub fn node(self: *Ln) Node {
         return Node.init(self);

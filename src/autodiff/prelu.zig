@@ -81,6 +81,16 @@ pub const PReLU = struct {
         std.debug.print("PReLU-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *PReLU) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
+
     /// Returns this PReLU node as a generic Node interface.
     pub fn node(self: *PReLU) Node {
         return Node.init(self);

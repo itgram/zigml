@@ -61,6 +61,12 @@ pub const Variable = struct {
         std.debug.print("Variable-diff: {s}, value: {}, grad: {}, dval: {}\n", .{ self.name, self.value, self.grad, dval });
     }
 
+    /// Resets the node's state by clearing accumulated gradients.
+    /// This is useful when you want to start a new gradient computation.
+    pub fn reset(self: *Variable) void {
+        self.grad.zero();
+    }
+
     /// Returns this variable node as a generic Node interface.
     pub fn node(self: *Variable) Node {
         return Node.init(self);

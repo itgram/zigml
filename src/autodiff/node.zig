@@ -3,7 +3,7 @@ const Tensor = @import("tensor.zig").Tensor;
 
 /// Node interface for autodiff.
 /// The Node interface defines the structure for nodes in the computation graph.
-/// Each node must implement the `eval` and `diff` methods.
+/// Each node must implement the `eval`, `diff`, and `reset` methods.
 pub const Node = struct {
     ptr: *anyopaque,
     vtab: *const VTab, //ptr to vtab
@@ -11,6 +11,7 @@ pub const Node = struct {
     const VTab = struct {
         evalFn: *const fn (ptr: *anyopaque) *Tensor,
         diffFn: *const fn (ptr: *anyopaque, dval: *Tensor) void,
+        resetFn: *const fn (ptr: *anyopaque) void,
     };
 
     // cast concrete implementation types/objs to interface
@@ -31,6 +32,10 @@ pub const Node = struct {
                 const self: T = @ptrCast(@alignCast(ptr));
                 self.diff(dval);
             }
+            fn reset(ptr: *anyopaque) void {
+                const self: T = @ptrCast(@alignCast(ptr));
+                self.reset();
+            }
         };
 
         return .{
@@ -38,6 +43,7 @@ pub const Node = struct {
             .vtab = &.{
                 .evalFn = impl.eval,
                 .diffFn = impl.diff,
+                .resetFn = impl.reset,
             },
         };
     }
@@ -48,5 +54,11 @@ pub const Node = struct {
 
     pub fn diff(self: Node, dval: *Tensor) void {
         self.vtab.diffFn(self.ptr, dval);
+    }
+
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: Node) void {
+        self.vtab.resetFn(self.ptr);
     }
 };

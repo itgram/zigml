@@ -66,6 +66,17 @@ pub const Add = struct {
         std.debug.print("Add-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Add) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+        self.y.reset();
+    }
+
     /// Returns this addition node as a generic Node interface.
     pub fn node(self: *Add) Node {
         return Node.init(self);

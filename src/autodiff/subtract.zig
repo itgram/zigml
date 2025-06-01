@@ -73,7 +73,18 @@ pub const Subtract = struct {
         std.debug.print("Subtract-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    /// Returns this subtraction node as a generic Node interface.
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Subtract) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+        self.y.reset();
+    }
+
+    /// Returns this subtract node as a generic Node interface.
     pub fn node(self: *Subtract) Node {
         return Node.init(self);
     }

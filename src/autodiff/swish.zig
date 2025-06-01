@@ -78,4 +78,14 @@ pub const Swish = struct {
     pub fn node(self: *Swish) Node {
         return Node.init(self);
     }
+
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: *Swish) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.value = null;
+        }
+        self.x.reset();
+    }
 };
