@@ -41,14 +41,14 @@ pub const Exp = struct {
     /// f(x) = e^x
     /// where x is the input tensor.
     /// The exponential function is often used in activation functions and probability distributions.
-    pub fn eval(self: *Exp) *Tensor {
+    pub fn eval(self: *Exp) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.pow(math.e, xv);
@@ -64,14 +64,15 @@ pub const Exp = struct {
     /// ∂f/∂x = e^x
     /// where x is the input tensor.
     /// The gradient of the exponential function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Exp, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+    pub fn diff(self: *Exp, dval: *Tensor) !void {
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * vv;
         }
-        self.x.diff(grad);
+
+        try self.x.diff(grad);
 
         std.debug.print("Exp-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

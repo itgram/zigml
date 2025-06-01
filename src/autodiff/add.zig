@@ -43,15 +43,15 @@ pub const Add = struct {
     /// f(x, y) = x + y
     /// where x and y are the input tensors.
     /// The add function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn eval(self: *Add) *Tensor {
+    pub fn eval(self: *Add) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
-        const y = self.y.eval();
+        const x = try self.x.eval();
+        const y = try self.y.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
             v.* = xv + yv;
@@ -68,9 +68,9 @@ pub const Add = struct {
     /// ∂f/∂y = 1
     /// where x and y are the input tensors.
     /// The gradient of the add function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Add, dval: *Tensor) void {
-        self.x.diff(dval);
-        self.y.diff(dval);
+    pub fn diff(self: *Add, dval: *Tensor) !void {
+        try self.x.diff(dval);
+        try self.y.diff(dval);
 
         std.debug.print("Add-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

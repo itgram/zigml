@@ -41,14 +41,14 @@ pub const ReLU = struct {
     /// f(x) = x if x > 0 else 0
     /// where x is the input tensor.
     /// The ReLU function is non-linear and allows for faster training of deep neural networks.
-    pub fn eval(self: *ReLU) *Tensor {
+    pub fn eval(self: *ReLU) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = if (xv > 0) xv else 0;
@@ -64,17 +64,17 @@ pub const ReLU = struct {
     /// ∂f/∂x = 1 if x > 0 else 0
     /// where x is the input tensor.
     /// The gradient of the ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *ReLU, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *ReLU, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = if (xv > 0) dv else 0;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("ReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

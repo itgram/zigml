@@ -9,8 +9,8 @@ pub const Node = struct {
     vtab: *const VTab, //ptr to vtab
 
     const VTab = struct {
-        evalFn: *const fn (ptr: *anyopaque) *Tensor,
-        diffFn: *const fn (ptr: *anyopaque, dval: *Tensor) void,
+        evalFn: *const fn (ptr: *anyopaque) anyerror!*Tensor,
+        diffFn: *const fn (ptr: *anyopaque, dval: *Tensor) anyerror!void,
         resetFn: *const fn (ptr: *anyopaque) void,
     };
 
@@ -24,13 +24,13 @@ pub const Node = struct {
         std.debug.assert(@typeInfo(ptrInfo.pointer.child) == .@"struct"); // Must point to a struct
 
         const impl = struct {
-            fn eval(ptr: *anyopaque) *Tensor {
+            fn eval(ptr: *anyopaque) anyerror!*Tensor {
                 const self: T = @ptrCast(@alignCast(ptr));
                 return self.eval();
             }
-            fn diff(ptr: *anyopaque, dval: *Tensor) void {
+            fn diff(ptr: *anyopaque, dval: *Tensor) anyerror!void {
                 const self: T = @ptrCast(@alignCast(ptr));
-                self.diff(dval);
+                return self.diff(dval);
             }
             fn reset(ptr: *anyopaque) void {
                 const self: T = @ptrCast(@alignCast(ptr));
@@ -48,12 +48,12 @@ pub const Node = struct {
         };
     }
 
-    pub fn eval(self: Node) *Tensor {
+    pub fn eval(self: Node) anyerror!*Tensor {
         return self.vtab.evalFn(self.ptr);
     }
 
-    pub fn diff(self: Node, dval: *Tensor) void {
-        self.vtab.diffFn(self.ptr, dval);
+    pub fn diff(self: Node, dval: *Tensor) anyerror!void {
+        return self.vtab.diffFn(self.ptr, dval);
     }
 
     /// Resets the node's state by clearing cached values.

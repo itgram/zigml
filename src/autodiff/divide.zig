@@ -2,7 +2,7 @@ const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Divide function node.
+/// Divide two nodes
 /// where x and y are nodes that evaluate to tensors.
 /// The Divide node computes the element-wise division of the tensors produced by its two input nodes.
 /// It is used to represent division operations in the computation graph.
@@ -43,15 +43,15 @@ pub const Divide = struct {
     /// f(x, y) = x / y
     /// where x and y are the input tensors.
     /// The divide function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn eval(self: *Divide) *Tensor {
+    pub fn eval(self: *Divide) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
-        const y = self.y.eval();
+        const x = try self.x.eval();
+        const y = try self.y.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
             v.* = xv / yv;
@@ -68,13 +68,13 @@ pub const Divide = struct {
     /// ∂f/∂y = -x / (y * y)
     /// where x and y are the input tensors.
     /// The gradient of the divide function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Divide, dval: *Tensor) void {
-        const x = self.x.eval();
-        const y = self.y.eval();
+    pub fn diff(self: *Divide, dval: *Tensor) !void {
+        const x = try self.x.eval();
+        const y = try self.y.eval();
 
-        const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_x = try Tensor.init(self.allocator, dval.shape);
         defer grad_x.deinit();
-        const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_y = try Tensor.init(self.allocator, dval.shape);
         defer grad_y.deinit();
 
         for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
@@ -82,8 +82,8 @@ pub const Divide = struct {
             gy.* = -dv * xv / (yv * yv);
         }
 
-        self.x.diff(grad_x);
-        self.y.diff(grad_y);
+        try self.x.diff(grad_x);
+        try self.y.diff(grad_y);
 
         std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
@@ -99,7 +99,7 @@ pub const Divide = struct {
         self.y.reset();
     }
 
-    /// Returns this divide node as a generic Node interface.
+    /// Returns this division node as a generic Node interface.
     pub fn node(self: *Divide) Node {
         return Node.init(self);
     }

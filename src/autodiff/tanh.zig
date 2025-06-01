@@ -44,14 +44,14 @@ pub const Tanh = struct {
     /// where e is the base of the natural logarithm.
     /// and x is the input tensor.
     /// The hyperbolic tangent function is a smooth, continuous function that is symmetric around the origin.
-    pub fn eval(self: *Tanh) *Tensor {
+    pub fn eval(self: *Tanh) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.tanh(xv);
@@ -67,14 +67,15 @@ pub const Tanh = struct {
     /// ∂f/∂x = 1 - tanh^2(x)
     /// where x is the input tensor.
     /// The gradient of the hyperbolic tangent function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Tanh, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+    pub fn diff(self: *Tanh, dval: *Tensor) !void {
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * (1 - vv * vv);
         }
-        self.x.diff(grad);
+
+        try self.x.diff(grad);
 
         std.debug.print("Tanh-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
@@ -89,7 +90,7 @@ pub const Tanh = struct {
         self.x.reset();
     }
 
-    /// Returns this tanh node as a generic Node interface.
+    /// Returns this hyperbolic tangent node as a generic Node interface.
     pub fn node(self: *Tanh) Node {
         return Node.init(self);
     }

@@ -43,14 +43,14 @@ pub const Tan = struct {
     /// where x is the input tensor.
     /// The tangent function is a periodic function that oscillates between -∞ and +∞.
     /// The tangent function is often used in trigonometric calculations and periodic functions.
-    pub fn eval(self: *Tan) *Tensor {
+    pub fn eval(self: *Tan) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.tan(xv);
@@ -66,10 +66,10 @@ pub const Tan = struct {
     /// ∂f/∂x = sec^2(x)
     /// where x is the input tensor.
     /// The gradient of the tangent function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Tan, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *Tan, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
@@ -77,7 +77,7 @@ pub const Tan = struct {
             v.* = dv * sec2 * sec2;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Tan-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

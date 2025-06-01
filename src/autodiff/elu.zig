@@ -43,17 +43,17 @@ pub const ELU = struct {
     /// f(x) = x if x > 0 else α * (exp(x) - 1)
     /// where α is a small positive constant (default 0.01).
     /// The ELU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
-    pub fn eval(self: *ELU) *Tensor {
+    pub fn eval(self: *ELU) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1);
+            v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1.0);
         }
 
         std.debug.print("ELU-eval: value: {?}\n", .{self.value});
@@ -66,17 +66,17 @@ pub const ELU = struct {
     /// ∂f/∂x = 1 if x > 0 else α * exp(x)
     /// where α is a small positive constant (default 0.01).
     /// The gradient of the ELU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *ELU, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *ELU, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, self.value.?.data, dval.data) |*v, xv, vv, dv| {
             v.* = if (xv > 0) dv else dv * (vv + self.alpha);
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("ELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

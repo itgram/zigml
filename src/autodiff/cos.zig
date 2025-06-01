@@ -43,14 +43,14 @@ pub const Cos = struct {
     /// where x is the input tensor.
     /// The cosine function is a periodic function that oscillates between -1 and 1.
     /// The cosine function is often used in trigonometric calculations and periodic functions.
-    pub fn eval(self: *Cos) *Tensor {
+    pub fn eval(self: *Cos) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.cos(xv);
@@ -66,17 +66,17 @@ pub const Cos = struct {
     /// ∂f/∂x = -sin(x)
     /// where x is the input tensor.
     /// The gradient of the cosine function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Cos, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *Cos, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = -dv * math.sin(xv);
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Cos-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

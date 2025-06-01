@@ -46,17 +46,17 @@ pub const SELU = struct {
     /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
     /// and α is a small positive constant (default 1.6732632423543772848170429916717).
     /// The SELU function is designed to self-normalize, meaning it helps maintain a mean of 0 and variance of 1 across layers.
-    pub fn eval(self: *SELU) *Tensor {
+    pub fn eval(self: *SELU) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (@exp(xv) - 1);
+            v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (math.exp(xv) - 1);
         }
 
         std.debug.print("SELU-eval: value: {?}\n", .{self.value});
@@ -70,17 +70,17 @@ pub const SELU = struct {
     /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
     /// and α is a small positive constant (default 1.6732632423543772848170429916717).
     /// The gradient of the SELU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *SELU, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *SELU, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, self.value.?.data, dval.data) |*v, xv, vv, dv| {
             v.* = if (xv > 0) dv * self.lambda else dv * (vv + self.lambda * self.alpha);
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("SELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

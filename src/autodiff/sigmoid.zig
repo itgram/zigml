@@ -42,14 +42,14 @@ pub const Sigmoid = struct {
     /// The Sigmoid function maps any real-valued number to the (0, 1) interval.
     /// The Sigmoid function is commonly used in neural networks as an activation function.
     /// It is particularly useful for binary classification tasks.
-    pub fn eval(self: *Sigmoid) *Tensor {
+    pub fn eval(self: *Sigmoid) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = 1.0 / (1.0 + math.exp(-xv));
@@ -65,15 +65,15 @@ pub const Sigmoid = struct {
     /// ∂f/∂x = σ(x) * (1 - σ(x))
     /// where x is the input tensor.
     /// The gradient of the Sigmoid function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Sigmoid, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+    pub fn diff(self: *Sigmoid, dval: *Tensor) !void {
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * vv * (1 - vv); // Derivative of sigmoid: σ'(x) = σ(x) * (1 - σ(x))
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Sigmoid-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

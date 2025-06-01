@@ -27,14 +27,14 @@ test "add operation eval and diff" {
     var f = try graph.add(x.node(), y.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 5.0), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 1.0), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1.0), y.grad.data[0]);
 }
@@ -63,14 +63,14 @@ test "multiply operation eval and diff" {
     var f = try graph.multiply(x.node(), y.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 6.0), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 3.0), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 2.0), y.grad.data[0]);
 }
@@ -107,14 +107,14 @@ test "multiply operation with subtract eval and diff" {
     var f = try graph.subtract(v1.node(), v2.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, -5.0), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 4.0), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, -6.0), y.grad.data[0]);
 }
@@ -170,14 +170,14 @@ test "sin operation with other operations eval and diff" {
     var f = try graph.add(v5.node(), v3.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 129.97871649324676), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 64.98935824662338), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 31.708999932382774), y.grad.data[0]);
 }
@@ -214,14 +214,14 @@ test "duplicate input eval and diff" {
     const f = try graph.multiply(v1.node(), v2.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 3.637189707302727), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, -0.7552899193628879), x.grad.data[0]);
 }
 
@@ -264,14 +264,14 @@ test "shared input eval and diff" {
     const f = try graph.add(v1.node(), v2.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 12), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 1), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 2), y.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
@@ -320,14 +320,14 @@ test "relu eval and diff" {
     const f = try graph.add(v2.node(), v3.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 12), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 1), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 2), y.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
@@ -378,14 +378,14 @@ test "leaky relu eval and diff" {
     const f = try graph.add(v2.node(), v3.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 0.99), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, alpha), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, alpha + 1), y.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 1), z.grad.data[0]);
@@ -419,14 +419,14 @@ test "sigmoid eval and diff" {
     const f = try graph.sigmoid(v1.node());
     defer f.deinit();
 
-    const result = f.eval();
+    const result = try f.eval();
     try std.testing.expectEqual(@as(f64, 0.9933071490757153), result.data[0]);
 
     const dfTensor = try graph.tensor(&[_]usize{1});
     defer dfTensor.deinit();
     dfTensor.data[0] = 1.0;
 
-    f.diff(dfTensor);
+    try f.diff(dfTensor);
     try std.testing.expectEqual(@as(f64, 0.006648056670790033), x.grad.data[0]);
     try std.testing.expectEqual(@as(f64, 0.006648056670790033), y.grad.data[0]);
 }

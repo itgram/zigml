@@ -45,14 +45,14 @@ pub const Linear = struct {
     /// where x is the input tensor.
     /// The linear function is often used in the output layer of neural networks for regression tasks.
     /// It is also used in the hidden layers of neural networks when no activation function is applied.
-    pub fn eval(self: *Linear) *Tensor {
+    pub fn eval(self: *Linear) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = xv;
@@ -68,8 +68,8 @@ pub const Linear = struct {
     /// ∂f/∂x = 1
     /// where x is the input tensor.
     /// The gradient of the linear function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Linear, dval: *Tensor) void {
-        self.x.diff(dval);
+    pub fn diff(self: *Linear, dval: *Tensor) !void {
+        try self.x.diff(dval);
 
         std.debug.print("Linear-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

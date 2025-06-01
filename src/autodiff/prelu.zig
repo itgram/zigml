@@ -51,14 +51,14 @@ pub const PReLU = struct {
     /// The PReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
     /// The PReLU function is particularly useful in deep neural networks where the ReLU function may lead to dead neurons.
     /// It allows the model to learn a small slope for negative inputs, which can help improve gradient flow during training.
-    pub fn eval(self: *PReLU) *Tensor {
+    pub fn eval(self: *PReLU) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data, self.alpha.data) |*v, xv, alpha| {
             v.* = if (xv > 0) xv else alpha * xv;
@@ -75,10 +75,10 @@ pub const PReLU = struct {
     /// ∂f / ∂α = x if x > 0 else 0
     /// where α is a learnable parameter (default 0.01).
     /// The gradient of the PReLU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *PReLU, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *PReLU, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, self.grad.data, x.data, dval.data) |*v, *ag, xv, dv| {
@@ -86,7 +86,7 @@ pub const PReLU = struct {
             ag.* += if (xv > 0) 0 else dv * xv;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("PReLU-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
     }

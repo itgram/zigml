@@ -41,15 +41,15 @@ pub const Ln = struct {
     /// The natural logarithm function is defined as:
     /// f(x) = ln(x)
     /// where x is the input tensor.
-    /// The natural logarithm is often used in optimization problems and loss functions.
-    pub fn eval(self: *Ln) *Tensor {
+    /// The natural logarithm function is often used in optimization problems and loss functions.
+    pub fn eval(self: *Ln) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.log(math.e, xv);
@@ -60,21 +60,22 @@ pub const Ln = struct {
         return self.value.?;
     }
 
+    /// Compute the gradient of the natural logarithm function.
     /// The gradient of the natural logarithm function is defined as:
     /// ∂f/∂x = 1 / x
     /// where x is the input tensor.
     /// The gradient of the natural logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Ln, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *Ln, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = dv / xv;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Ln-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

@@ -5,10 +5,10 @@ const Tensor = @import("tensor.zig").Tensor;
 
 /// Log function node.
 /// The Log node represents the logarithm function applied to a tensor.
-/// It computes the logarithm of each element in the input tensor to the base 10.
-/// The Log node is used in various mathematical computations and neural networks where logarithmic scaling is required.
+/// It computes the logarithm of each element in the input tensor.
+/// The Log node is used in neural networks and mathematical computations where the logarithm function is required.
 /// It supports automatic differentiation, allowing gradients to be computed for backpropagation.
-/// The Log node is defined as:
+/// It is defined as:
 /// f(x) = log10(x)
 /// where x is the input tensor.
 /// The logarithm function is often used in optimization problems and loss functions.
@@ -42,14 +42,14 @@ pub const Log = struct {
     /// f(x) = log10(x)
     /// where x is the input tensor.
     /// The logarithm function is often used in optimization problems and loss functions.
-    pub fn eval(self: *Log) *Tensor {
+    pub fn eval(self: *Log) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = math.log(10, xv);
@@ -65,17 +65,17 @@ pub const Log = struct {
     /// ∂f/∂x = 1 / (x * ln(10))
     /// where x is the input tensor.
     /// The gradient of the logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Log, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *Log, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = dv / (xv * math.ln10);
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Log-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

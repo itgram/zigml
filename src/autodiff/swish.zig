@@ -45,14 +45,14 @@ pub const Swish = struct {
     /// The Swish function is a smooth, non-monotonic activation function.
     /// The Swish function is often used in deep learning models as an activation function.
     /// It has been shown to perform better than ReLU in some cases, especially in deeper networks.
-    pub fn eval(self: *Swish) *Tensor {
+    pub fn eval(self: *Swish) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = xv / (1 + math.exp(-xv));
@@ -68,10 +68,10 @@ pub const Swish = struct {
     /// ∂f/∂x = σ(x) + x * σ(x) * (1 - σ(x))
     /// where σ is the sigmoid function.
     /// The gradient of the Swish function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Swish, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *Swish, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
@@ -79,7 +79,7 @@ pub const Swish = struct {
             v.* = dv * (sig + xv * sig * (1 - sig));
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Swish-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

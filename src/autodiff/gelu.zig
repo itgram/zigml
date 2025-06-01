@@ -44,14 +44,14 @@ pub const GELU = struct {
     /// f(x) = 0.5 * x * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3)))
     /// where x is the input tensor.
     /// The GELU function is a smooth approximation of the ReLU function.
-    pub fn eval(self: *GELU) *Tensor {
+    pub fn eval(self: *GELU) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
             v.* = 0.5 * xv * (1 + math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv)));
@@ -67,10 +67,10 @@ pub const GELU = struct {
     /// ∂f/∂x = 0.5 * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3))) + 0.5 * x * (1 - tanh(sqrt(2 / π) * (x + 0.044715 * x^3))^2) * sqrt(2 / π) * (1 + 3 * 0.044715 * x^2)
     /// where x is the input tensor.
     /// The gradient of the GELU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *GELU, dval: *Tensor) void {
-        const x = self.x.eval();
+    pub fn diff(self: *GELU, dval: *Tensor) !void {
+        const x = try self.x.eval();
 
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
@@ -80,7 +80,7 @@ pub const GELU = struct {
             v.* = dv * derivative;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("GELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

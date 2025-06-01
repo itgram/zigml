@@ -33,7 +33,7 @@ pub const Constant = struct {
     /// f(x) = value
     /// where x is the input tensor.
     /// The constant function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn eval(self: *Constant) *Tensor {
+    pub fn eval(self: *Constant) !*Tensor {
         std.debug.print("Constant-eval: {}\n", .{self.value});
 
         return self.value;
@@ -44,7 +44,7 @@ pub const Constant = struct {
     /// ∂f/∂x = 0
     /// where x is the input tensor.
     /// The gradient of the constant function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Constant, dval: *Tensor) void {
+    pub fn diff(self: *Constant, dval: *Tensor) !void {
         std.debug.print("Constant-diff: {}, dval: {}\n", .{ self.value, dval });
     }
 

@@ -41,15 +41,15 @@ pub const Power = struct {
     /// The power function is defined as:
     /// f(x, y) = x^y
     /// where x and y are the input tensors.
-    pub fn eval(self: *Power) *Tensor {
+    pub fn eval(self: *Power) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
-        const y = self.y.eval();
+        const x = try self.x.eval();
+        const y = try self.y.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
             v.* = math.pow(xv, yv);
@@ -66,13 +66,13 @@ pub const Power = struct {
     /// ∂f/∂y = x^y * ln(x)
     /// where x and y are the input tensors.
     /// The gradient of the power function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Power, dval: *Tensor) void {
-        const x = self.x.eval();
-        const y = self.y.eval();
+    pub fn diff(self: *Power, dval: *Tensor) !void {
+        const x = try self.x.eval();
+        const y = try self.y.eval();
 
-        const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_x = try Tensor.init(self.allocator, dval.shape);
         defer grad_x.deinit();
-        const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        const grad_y = try Tensor.init(self.allocator, dval.shape);
         defer grad_y.deinit();
 
         for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
@@ -80,8 +80,8 @@ pub const Power = struct {
             gy.* = dv * math.pow(xv, yv) * math.ln(xv);
         }
 
-        self.x.diff(grad_x);
-        self.y.diff(grad_y);
+        try self.x.diff(grad_x);
+        try self.y.diff(grad_y);
 
         std.debug.print("Power-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

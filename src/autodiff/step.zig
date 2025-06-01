@@ -44,17 +44,17 @@ pub const Step = struct {
     /// The step function is often used in binary classification tasks and as an activation function in neural networks.
     /// It is not differentiable at the threshold, but it can be used in contexts where a hard thresholding is required.
     /// The step function is useful for creating binary outputs from continuous inputs.
-    pub fn eval(self: *Step) *Tensor {
+    pub fn eval(self: *Step) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv >= self.threshold) 1 else 0;
+            v.* = if (xv >= self.threshold) 1.0 else 0.0;
         }
 
         std.debug.print("Step-eval: value: {?}\n", .{self.value});
@@ -67,15 +67,15 @@ pub const Step = struct {
     /// ∂f/∂x = 0
     /// where x is the input tensor.
     /// The gradient of the step function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Step, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+    pub fn diff(self: *Step, dval: *Tensor) !void {
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         for (grad.data) |*v| {
             v.* = 0;
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
 
         std.debug.print("Step-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

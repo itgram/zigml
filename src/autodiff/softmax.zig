@@ -41,14 +41,15 @@ pub const Softmax = struct {
     /// The softmax function is defined as:
     /// f(x_i) = exp(x_i) / sum(exp(x_j)) for j in [1, ..., n]
     /// where x_i is the i-th element of the input tensor and n is the number of elements in the tensor.
-    pub fn eval(self: *Softmax) *Tensor {
+    pub fn eval(self: *Softmax) !*Tensor {
         if (self.value) |v| {
             return v;
         }
 
-        const x = self.x.eval();
+        const x = try self.x.eval();
 
-        self.value = Tensor.init(self.allocator, x.shape) catch null;
+        self.value = try Tensor.init(self.allocator, x.shape);
+
         const shape = x.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
@@ -93,8 +94,8 @@ pub const Softmax = struct {
     ///  -Si * Sj,         if i ≠ j
     /// Where:
     /// - S is the softmax output.
-    pub fn diff(self: *Softmax, dval: *Tensor) void {
-        const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+    pub fn diff(self: *Softmax, dval: *Tensor) !void {
+        const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
         const shape = dval.shape;
@@ -127,7 +128,7 @@ pub const Softmax = struct {
             }
         }
 
-        self.x.diff(grad);
+        try self.x.diff(grad);
         std.debug.print("Softmax-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
