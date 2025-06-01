@@ -1,6 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Divide two nodes
 /// where x and y are nodes that evaluate to tensors.
@@ -104,3 +105,148 @@ pub const Divide = struct {
         return Node.init(self);
     }
 };
+
+test "divide basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Numerator and denominator
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 4.0;
+    xTensor.data[1] = 9.0;
+    xTensor.data[2] = -6.0;
+    xTensor.data[3] = 0.0;
+
+    const yTensor = try graph.tensor(&[_]usize{4});
+    defer yTensor.deinit();
+    yTensor.data[0] = 2.0;
+    yTensor.data[1] = -3.0;
+    yTensor.data[2] = 2.0;
+    yTensor.data[3] = 1.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    var div_op = try graph.divide(x.node(), y.node());
+    defer div_op.deinit();
+
+    const result = try div_op.eval();
+    const expected = [_]f64{ 2.0, -3.0, -3.0, 0.0 };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "divide gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{2});
+    defer xTensor.deinit();
+    xTensor.data[0] = 6.0;
+    xTensor.data[1] = 2.0;
+    const yTensor = try graph.tensor(&[_]usize{2});
+    defer yTensor.deinit();
+    yTensor.data[0] = 3.0;
+    yTensor.data[1] = 4.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    var div_op = try graph.divide(x.node(), y.node());
+    defer div_op.deinit();
+
+    const result = try div_op.eval();
+    const expected = [_]f64{ 2.0, 0.5 };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Gradient wrt output
+    const gradTensor = try graph.tensor(&[_]usize{2});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+
+    try div_op.diff(gradTensor);
+
+    // dx = dval / y, dy = -dval * x / (y*y)
+    const expected_grad_x = [_]f64{ 1.0 / 3.0, 1.0 / 4.0 };
+    const expected_grad_y = [_]f64{ -6.0 / (3.0 * 3.0), -2.0 / (4.0 * 4.0) };
+    for (x.grad.data, expected_grad_x) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+    for (y.grad.data, expected_grad_y) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "divide edge cases" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Division by negative and zero
+    const xTensor = try graph.tensor(&[_]usize{3});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = -2.0;
+    xTensor.data[2] = 0.0;
+    const yTensor = try graph.tensor(&[_]usize{3});
+    defer yTensor.deinit();
+    yTensor.data[0] = -1.0;
+    yTensor.data[1] = 0.0;
+    yTensor.data[2] = 5.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    var div_op = try graph.divide(x.node(), y.node());
+    defer div_op.deinit();
+
+    const result = try div_op.eval();
+    // Division by zero will result in +/-inf or nan
+    try std.testing.expect(result.data[0] == -1.0);
+    try std.testing.expect(std.math.isNan(result.data[1]) or std.math.isInf(result.data[1]));
+    try std.testing.expect(result.data[2] == 0.0);
+}
+
+test "divide reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{2});
+    defer xTensor.deinit();
+    xTensor.data[0] = 2.0;
+    xTensor.data[1] = 4.0;
+    const yTensor = try graph.tensor(&[_]usize{2});
+    defer yTensor.deinit();
+    yTensor.data[0] = 2.0;
+    yTensor.data[1] = 2.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    var div_op = try graph.divide(x.node(), y.node());
+    defer div_op.deinit();
+
+    const result1 = try div_op.eval();
+    const expected1 = [_]f64{ 1.0, 2.0 };
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+    div_op.reset();
+    const result2 = try div_op.eval();
+    const expected2 = [_]f64{ 1.0, 2.0 };
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

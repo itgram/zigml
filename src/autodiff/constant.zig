@@ -1,6 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Constant node.
 /// Represents a constant value in the computation graph.
@@ -59,3 +60,124 @@ pub const Constant = struct {
         return Node.init(self);
     }
 };
+
+test "constant basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create constant tensor
+    const valueTensor = try graph.tensor(&[_]usize{4});
+    defer valueTensor.deinit();
+    valueTensor.data[0] = 1.0;
+    valueTensor.data[1] = 2.0;
+    valueTensor.data[2] = 3.0;
+    valueTensor.data[3] = 4.0;
+
+    // Create constant node
+    var constant = try graph.constant(valueTensor);
+    defer constant.deinit();
+
+    // Evaluate
+    const result = try constant.eval();
+    const expected = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "constant gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create constant tensor
+    const valueTensor = try graph.tensor(&[_]usize{4});
+    defer valueTensor.deinit();
+    valueTensor.data[0] = 1.0;
+    valueTensor.data[1] = 2.0;
+    valueTensor.data[2] = 3.0;
+    valueTensor.data[3] = 4.0;
+
+    // Create constant node
+    var constant = try graph.constant(valueTensor);
+    defer constant.deinit();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 2.0;
+    gradTensor.data[2] = 3.0;
+    gradTensor.data[3] = 4.0;
+
+    // Compute gradients
+    try constant.diff(gradTensor);
+
+    // Verify that the constant node's value remains unchanged after gradient computation
+    const result = try constant.eval();
+    const expected = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "constant with different shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create constant tensor
+    const valueTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer valueTensor.deinit();
+    valueTensor.data[0] = 1.0;
+    valueTensor.data[1] = 2.0;
+    valueTensor.data[2] = 3.0;
+    valueTensor.data[3] = 4.0;
+
+    // Create constant node
+    var constant = try graph.constant(valueTensor);
+    defer constant.deinit();
+
+    // Evaluate
+    const result = try constant.eval();
+    const expected = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "constant reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create constant tensor
+    const valueTensor = try graph.tensor(&[_]usize{4});
+    defer valueTensor.deinit();
+    valueTensor.data[0] = 1.0;
+    valueTensor.data[1] = 2.0;
+    valueTensor.data[2] = 3.0;
+    valueTensor.data[3] = 4.0;
+
+    // Create constant node
+    var constant = try graph.constant(valueTensor);
+    defer constant.deinit();
+
+    // First evaluation
+    const result1 = try constant.eval();
+    const expected1 = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset (should be a no-op for constants)
+    constant.reset();
+
+    // Second evaluation
+    const result2 = try constant.eval();
+    const expected2 = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

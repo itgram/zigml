@@ -19,7 +19,7 @@ run: ## run the application
 	zig build run 
 
 .PHONY: test
-test: ## run the unit tests
+test: ## run all unit tests
 	zig build test --summary all
 
 .PHONY: help

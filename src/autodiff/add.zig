@@ -1,6 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Add two nodes
 /// where x and y are nodes that evaluate to tensors.
@@ -69,8 +70,18 @@ pub const Add = struct {
     /// where x and y are the input tensors.
     /// The gradient of the add function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Add, dval: *Tensor) !void {
-        try self.x.diff(dval);
-        try self.y.diff(dval);
+        const grad_x = try Tensor.init(self.allocator, dval.shape);
+        defer grad_x.deinit();
+        const grad_y = try Tensor.init(self.allocator, dval.shape);
+        defer grad_y.deinit();
+
+        for (grad_x.data, grad_y.data, dval.data) |*gx, *gy, dv| {
+            gx.* = dv;
+            gy.* = dv;
+        }
+
+        try self.x.diff(grad_x);
+        try self.y.diff(grad_y);
 
         std.debug.print("Add-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
@@ -91,3 +102,180 @@ pub const Add = struct {
         return Node.init(self);
     }
 };
+
+test "add basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = 2.0;
+    xTensor.data[2] = 3.0;
+    xTensor.data[3] = 4.0;
+
+    const yTensor = try graph.tensor(&[_]usize{4});
+    defer yTensor.deinit();
+    yTensor.data[0] = 5.0;
+    yTensor.data[1] = 6.0;
+    yTensor.data[2] = 7.0;
+    yTensor.data[3] = 8.0;
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create add operation
+    var add = try graph.add(x.node(), y.node());
+    defer add.deinit();
+
+    // Evaluate
+    const result = try add.eval();
+    const expected = [_]f64{ 6.0, 8.0, 10.0, 12.0 };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "add gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = 2.0;
+    xTensor.data[2] = 3.0;
+    xTensor.data[3] = 4.0;
+
+    const yTensor = try graph.tensor(&[_]usize{4});
+    defer yTensor.deinit();
+    yTensor.data[0] = 5.0;
+    yTensor.data[1] = 6.0;
+    yTensor.data[2] = 7.0;
+    yTensor.data[3] = 8.0;
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create add operation
+    var add = try graph.add(x.node(), y.node());
+    defer add.deinit();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 2.0;
+    gradTensor.data[2] = 3.0;
+    gradTensor.data[3] = 4.0;
+
+    // Compute gradients
+    try add.diff(gradTensor);
+
+    // Expected gradients for x and y
+    const expected_grad = [_]f64{ 1.0, 2.0, 3.0, 4.0 };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    for (y.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "add with different shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors
+    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = 2.0;
+    xTensor.data[2] = 3.0;
+    xTensor.data[3] = 4.0;
+
+    const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer yTensor.deinit();
+    yTensor.data[0] = 5.0;
+    yTensor.data[1] = 6.0;
+    yTensor.data[2] = 7.0;
+    yTensor.data[3] = 8.0;
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create add operation
+    var add = try graph.add(x.node(), y.node());
+    defer add.deinit();
+
+    // Evaluate
+    const result = try add.eval();
+    const expected = [_]f64{ 6.0, 8.0, 10.0, 12.0 };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "add reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = 2.0;
+    xTensor.data[2] = 3.0;
+    xTensor.data[3] = 4.0;
+
+    const yTensor = try graph.tensor(&[_]usize{4});
+    defer yTensor.deinit();
+    yTensor.data[0] = 5.0;
+    yTensor.data[1] = 6.0;
+    yTensor.data[2] = 7.0;
+    yTensor.data[3] = 8.0;
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create add operation
+    var add = try graph.add(x.node(), y.node());
+    defer add.deinit();
+
+    // First evaluation
+    const result1 = try add.eval();
+    const expected1 = [_]f64{ 6.0, 8.0, 10.0, 12.0 };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset
+    add.reset();
+
+    // Second evaluation
+    const result2 = try add.eval();
+    const expected2 = [_]f64{ 6.0, 8.0, 10.0, 12.0 };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

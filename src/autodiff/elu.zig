@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Exponential Linear Unit (ELU) activation function node.
 /// The ELU function is used in neural networks to introduce non-linearity.
@@ -96,3 +97,133 @@ pub const ELU = struct {
         return Node.init(self);
     }
 };
+
+test "elu basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 2.0;
+    xTensor.data[1] = 0.0;
+    xTensor.data[2] = -1.0;
+    xTensor.data[3] = -2.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    var elu_op = try graph.elu(x.node(), 0.01);
+    defer elu_op.deinit();
+
+    const result = try elu_op.eval();
+    const expected = [_]f64{
+        2.0, // x > 0
+        0.0, // x == 0
+        0.01 * (std.math.exp(-1.0) - 1.0), // x < 0
+        0.01 * (std.math.exp(-2.0) - 1.0), // x < 0
+    };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "elu gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{3});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = 0.0;
+    xTensor.data[2] = -1.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    var elu_op = try graph.elu(x.node(), 0.01);
+    defer elu_op.deinit();
+
+    const result = try elu_op.eval();
+    const expected = [_]f64{
+        1.0,
+        0.0,
+        0.01 * (std.math.exp(-1.0) - 1.0),
+    };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Gradient wrt output
+    const gradTensor = try graph.tensor(&[_]usize{3});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+
+    try elu_op.diff(gradTensor);
+
+    // For x > 0: grad = 1
+    // For x == 0: grad = 1
+    // For x < 0: grad = dv * (vv + alpha)
+    const expected_grad = [_]f64{
+        1.0, // x > 0
+        0.01, // x == 0 (vv + alpha = alpha * (exp(0) - 1) + alpha = 0 + 0.01 = 0.01)
+        gradTensor.data[2] * (result.data[2] + 0.01), // x < 0
+    };
+    try std.testing.expectApproxEqAbs(x.grad.data[0], expected_grad[0], 1e-6);
+    try std.testing.expectApproxEqAbs(x.grad.data[1], expected_grad[1], 1e-6);
+    try std.testing.expectApproxEqAbs(x.grad.data[2], expected_grad[2], 1e-6);
+}
+
+test "elu custom alpha" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{2});
+    defer xTensor.deinit();
+    xTensor.data[0] = -1.0;
+    xTensor.data[1] = 2.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    var elu_op = try graph.elu(x.node(), 0.5);
+    defer elu_op.deinit();
+
+    const result = try elu_op.eval();
+    const expected = [_]f64{
+        0.5 * (std.math.exp(-1.0) - 1.0),
+        2.0,
+    };
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "elu reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    const xTensor = try graph.tensor(&[_]usize{2});
+    defer xTensor.deinit();
+    xTensor.data[0] = 1.0;
+    xTensor.data[1] = -1.0;
+
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    var elu_op = try graph.elu(x.node(), 0.01);
+    defer elu_op.deinit();
+
+    const result1 = try elu_op.eval();
+    const expected1 = [_]f64{ 1.0, 0.01 * (std.math.exp(-1.0) - 1.0) };
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+    elu_op.reset();
+    const result2 = try elu_op.eval();
+    const expected2 = [_]f64{ 1.0, 0.01 * (std.math.exp(-1.0) - 1.0) };
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

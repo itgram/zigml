@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Ln function node.
 /// The natural logarithm function, which is the logarithm to the base e.
@@ -52,7 +53,7 @@ pub const Ln = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.log(math.e, xv);
+            v.* = @log(xv);
         }
 
         std.debug.print("Ln-eval: value: {?}\n", .{self.value});
@@ -95,3 +96,273 @@ pub const Ln = struct {
         return Node.init(self);
     }
 };
+
+test "ln basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.1; // small positive input
+    xTensor.data[1] = 0.5; // small positive input
+    xTensor.data[2] = 1.0; // unit input
+    xTensor.data[3] = 2.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create ln operation
+    var ln_op = try graph.ln(x.node());
+    defer ln_op.deinit();
+
+    // Evaluate forward pass
+    const result = try ln_op.eval();
+
+    // Expected values for each input:
+    // f(x) = ln(x)
+    const expected = [_]f64{
+        @as(f64, @log(0.1)), // ln(0.1)
+        @as(f64, @log(0.5)), // ln(0.5)
+        @as(f64, @log(1.0)), // ln(1.0)
+        @as(f64, @log(2.0)), // ln(2.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "ln gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.1; // small positive input
+    xTensor.data[1] = 0.5; // small positive input
+    xTensor.data[2] = 1.0; // unit input
+    xTensor.data[3] = 2.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create ln operation
+    var ln_op = try graph.ln(x.node());
+    defer ln_op.deinit();
+
+    // First evaluate to cache the values
+    _ = try ln_op.eval();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try ln_op.diff(gradTensor);
+
+    // Expected gradients for each input:
+    // ∂f/∂x = 1/x
+    const expected_grad = [_]f64{
+        1.0 / 0.1, // ln'(0.1)
+        1.0 / 0.5, // ln'(0.5)
+        1.0 / 1.0, // ln'(1.0)
+        1.0 / 2.0, // ln'(2.0)
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "ln with multiple shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Test 1: 2D shape [2, 2]
+    {
+        // Create input tensor with shape [2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = 0.1; // [0,0]
+        xTensor.data[1] = 0.5; // [0,1]
+        xTensor.data[2] = 1.0; // [1,0]
+        xTensor.data[3] = 2.0; // [1,1]
+
+        // Create variable
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+
+        // Create ln operation
+        var ln_op = try graph.ln(x.node());
+        defer ln_op.deinit();
+
+        // Evaluate forward pass
+        const result = try ln_op.eval();
+
+        // Expected values for each input:
+        // f(x) = ln(x)
+        const expected = [_]f64{
+            @as(f64, @log(0.1)), // ln(0.1)
+            @as(f64, @log(0.5)), // ln(0.5)
+            @as(f64, @log(1.0)), // ln(1.0)
+            @as(f64, @log(2.0)), // ln(2.0)
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer gradTensor.deinit();
+        gradTensor.data[0] = 1.0;
+        gradTensor.data[1] = 1.0;
+        gradTensor.data[2] = 1.0;
+        gradTensor.data[3] = 1.0;
+
+        try ln_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1/x
+        const expected_grad = [_]f64{
+            1.0 / 0.1, // ln'(0.1)
+            1.0 / 0.5, // ln'(0.5)
+            1.0 / 1.0, // ln'(1.0)
+            1.0 / 2.0, // ln'(2.0)
+        };
+
+        for (x.grad.data, expected_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+
+    // Test 2: 3D shape [2, 2, 2]
+    {
+        // Create input tensor with shape [2, 2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = 0.1; // [0,0,0]
+        xTensor.data[1] = 0.5; // [0,0,1]
+        xTensor.data[2] = 1.0; // [0,1,0]
+        xTensor.data[3] = 2.0; // [0,1,1]
+        xTensor.data[4] = 0.2; // [1,0,0]
+        xTensor.data[5] = 0.8; // [1,0,1]
+        xTensor.data[6] = 1.5; // [1,1,0]
+        xTensor.data[7] = 3.0; // [1,1,1]
+
+        // Create variable
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+
+        // Create ln operation
+        var ln_op = try graph.ln(x.node());
+        defer ln_op.deinit();
+
+        // Evaluate forward pass
+        const result = try ln_op.eval();
+
+        // Expected values for each input:
+        // f(x) = ln(x)
+        const expected = [_]f64{
+            @as(f64, @log(0.1)), // ln(0.1)
+            @as(f64, @log(0.5)), // ln(0.5)
+            @as(f64, @log(1.0)), // ln(1.0)
+            @as(f64, @log(2.0)), // ln(2.0)
+            @as(f64, @log(0.2)), // ln(0.2)
+            @as(f64, @log(0.8)), // ln(0.8)
+            @as(f64, @log(1.5)), // ln(1.5)
+            @as(f64, @log(3.0)), // ln(3.0)
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer gradTensor.deinit();
+        for (gradTensor.data) |*v| {
+            v.* = 1.0;
+        }
+
+        try ln_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1/x
+        const expected_grad = [_]f64{
+            1.0 / 0.1, // ln'(0.1)
+            1.0 / 0.5, // ln'(0.5)
+            1.0 / 1.0, // ln'(1.0)
+            1.0 / 2.0, // ln'(2.0)
+            1.0 / 0.2, // ln'(0.2)
+            1.0 / 0.8, // ln'(0.8)
+            1.0 / 1.5, // ln'(1.5)
+            1.0 / 3.0, // ln'(3.0)
+        };
+
+        for (x.grad.data, expected_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+}
+
+test "ln reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.1; // small positive input
+    xTensor.data[1] = 0.5; // small positive input
+    xTensor.data[2] = 1.0; // unit input
+    xTensor.data[3] = 2.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create ln operation
+    var ln_op = try graph.ln(x.node());
+    defer ln_op.deinit();
+
+    // First evaluation
+    const result1 = try ln_op.eval();
+
+    // Expected values for each input:
+    // f(x) = ln(x)
+    const expected1 = [_]f64{
+        @as(f64, @log(0.1)), // ln(0.1)
+        @as(f64, @log(0.5)), // ln(0.5)
+        @as(f64, @log(1.0)), // ln(1.0)
+        @as(f64, @log(2.0)), // ln(2.0)
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset and evaluate again
+    ln_op.reset();
+    const result2 = try ln_op.eval();
+
+    // Expected values should be the same after reset
+    const expected2 = [_]f64{
+        @as(f64, @log(0.1)), // ln(0.1)
+        @as(f64, @log(0.5)), // ln(0.5)
+        @as(f64, @log(1.0)), // ln(1.0)
+        @as(f64, @log(2.0)), // ln(2.0)
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

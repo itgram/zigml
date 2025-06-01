@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Linear function node.
 /// The Linear node represents a linear transformation of the input tensor.
@@ -89,3 +90,273 @@ pub const Linear = struct {
         return Node.init(self);
     }
 };
+
+test "linear basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create linear operation
+    var linear_op = try graph.linear(x.node());
+    defer linear_op.deinit();
+
+    // Evaluate forward pass
+    const result = try linear_op.eval();
+
+    // Expected values for each input:
+    // f(x) = x
+    const expected = [_]f64{
+        -2.0, // linear(-2.0)
+        -1.0, // linear(-1.0)
+        0.0, // linear(0.0)
+        1.0, // linear(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "linear gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create linear operation
+    var linear_op = try graph.linear(x.node());
+    defer linear_op.deinit();
+
+    // First evaluate to cache the values
+    _ = try linear_op.eval();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try linear_op.diff(gradTensor);
+
+    // Expected gradients for each input:
+    // ∂f/∂x = 1
+    const expected_grad = [_]f64{
+        1.0, // linear'(-2.0)
+        1.0, // linear'(-1.0)
+        1.0, // linear'(0.0)
+        1.0, // linear'(1.0)
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "linear with multiple shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Test 1: 2D shape [2, 2]
+    {
+        // Create input tensor with shape [2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = -2.0; // [0,0]
+        xTensor.data[1] = -1.0; // [0,1]
+        xTensor.data[2] = 0.0; // [1,0]
+        xTensor.data[3] = 1.0; // [1,1]
+
+        // Create variable
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+
+        // Create linear operation
+        var linear_op = try graph.linear(x.node());
+        defer linear_op.deinit();
+
+        // Evaluate forward pass
+        const result = try linear_op.eval();
+
+        // Expected values for each input:
+        // f(x) = x
+        const expected = [_]f64{
+            -2.0, // linear(-2.0)
+            -1.0, // linear(-1.0)
+            0.0, // linear(0.0)
+            1.0, // linear(1.0)
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer gradTensor.deinit();
+        gradTensor.data[0] = 1.0;
+        gradTensor.data[1] = 1.0;
+        gradTensor.data[2] = 1.0;
+        gradTensor.data[3] = 1.0;
+
+        try linear_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1
+        const expected_grad = [_]f64{
+            1.0, // linear'(-2.0)
+            1.0, // linear'(-1.0)
+            1.0, // linear'(0.0)
+            1.0, // linear'(1.0)
+        };
+
+        for (x.grad.data, expected_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+
+    // Test 2: 3D shape [2, 2, 2]
+    {
+        // Create input tensor with shape [2, 2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = -2.0; // [0,0,0]
+        xTensor.data[1] = -1.0; // [0,0,1]
+        xTensor.data[2] = 0.0; // [0,1,0]
+        xTensor.data[3] = 1.0; // [0,1,1]
+        xTensor.data[4] = -1.5; // [1,0,0]
+        xTensor.data[5] = -0.5; // [1,0,1]
+        xTensor.data[6] = 0.5; // [1,1,0]
+        xTensor.data[7] = 1.5; // [1,1,1]
+
+        // Create variable
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+
+        // Create linear operation
+        var linear_op = try graph.linear(x.node());
+        defer linear_op.deinit();
+
+        // Evaluate forward pass
+        const result = try linear_op.eval();
+
+        // Expected values for each input:
+        // f(x) = x
+        const expected = [_]f64{
+            -2.0, // linear(-2.0)
+            -1.0, // linear(-1.0)
+            0.0, // linear(0.0)
+            1.0, // linear(1.0)
+            -1.5, // linear(-1.5)
+            -0.5, // linear(-0.5)
+            0.5, // linear(0.5)
+            1.5, // linear(1.5)
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer gradTensor.deinit();
+        for (gradTensor.data) |*v| {
+            v.* = 1.0;
+        }
+
+        try linear_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1
+        const expected_grad = [_]f64{
+            1.0, // linear'(-2.0)
+            1.0, // linear'(-1.0)
+            1.0, // linear'(0.0)
+            1.0, // linear'(1.0)
+            1.0, // linear'(-1.5)
+            1.0, // linear'(-0.5)
+            1.0, // linear'(0.5)
+            1.0, // linear'(1.5)
+        };
+
+        for (x.grad.data, expected_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+}
+
+test "linear reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create linear operation
+    var linear_op = try graph.linear(x.node());
+    defer linear_op.deinit();
+
+    // First evaluation
+    const result1 = try linear_op.eval();
+
+    // Expected values for each input:
+    // f(x) = x
+    const expected1 = [_]f64{
+        -2.0, // linear(-2.0)
+        -1.0, // linear(-1.0)
+        0.0, // linear(0.0)
+        1.0, // linear(1.0)
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset and evaluate again
+    linear_op.reset();
+    const result2 = try linear_op.eval();
+
+    // Expected values should be the same after reset
+    const expected2 = [_]f64{
+        -2.0, // linear(-2.0)
+        -1.0, // linear(-1.0)
+        0.0, // linear(0.0)
+        1.0, // linear(1.0)
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

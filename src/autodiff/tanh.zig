@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Tanh function node.
 /// The Tanh (hyperbolic tangent) function.
@@ -95,3 +96,178 @@ pub const Tanh = struct {
         return Node.init(self);
     }
 };
+
+test "tanh basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tanh operation
+    var tanh_op = try graph.tanh(x.node());
+    defer tanh_op.deinit();
+
+    // First evaluate to cache the values
+    const result = try tanh_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.9640275800758169), // tanh(-2.0)
+        @as(f64, -0.7615941559557649), // tanh(-1.0)
+        @as(f64, 0.0), // tanh(0.0)
+        @as(f64, 0.7615941559557649), // tanh(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tanh gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tanh operation
+    var tanh_op = try graph.tanh(x.node());
+    defer tanh_op.deinit();
+
+    // First evaluate to cache the values
+    const result = try tanh_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.9640275800758169), // tanh(-2.0)
+        @as(f64, -0.7615941559557649), // tanh(-1.0)
+        @as(f64, 0.0), // tanh(0.0)
+        @as(f64, 0.7615941559557649), // tanh(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try tanh_op.diff(gradTensor);
+
+    // Expected gradients: 1 - tanh(x)^2
+    const expected_grad = [_]f64{
+        @as(f64, 0.07065082485316443), // 1 - tanh(-2.0)^2
+        @as(f64, 0.41997434161402614), // 1 - tanh(-1.0)^2
+        @as(f64, 1.0), // 1 - tanh(0.0)^2
+        @as(f64, 0.41997434161402614), // 1 - tanh(1.0)^2
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tanh with different shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tanh operation
+    var tanh_op = try graph.tanh(x.node());
+    defer tanh_op.deinit();
+
+    // Evaluate
+    const result = try tanh_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.9640275800758169), // tanh(-2.0)
+        @as(f64, -0.7615941559557649), // tanh(-1.0)
+        @as(f64, 0.0), // tanh(0.0)
+        @as(f64, 0.7615941559557649), // tanh(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tanh reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tanh operation
+    var tanh_op = try graph.tanh(x.node());
+    defer tanh_op.deinit();
+
+    // First evaluation
+    const result1 = try tanh_op.eval();
+    const expected1 = [_]f64{
+        @as(f64, -0.9640275800758169), // tanh(-2.0)
+        @as(f64, -0.7615941559557649), // tanh(-1.0)
+        @as(f64, 0.0), // tanh(0.0)
+        @as(f64, 0.7615941559557649), // tanh(1.0)
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset
+    tanh_op.reset();
+
+    // Second evaluation
+    const result2 = try tanh_op.eval();
+    const expected2 = [_]f64{
+        @as(f64, -0.9640275800758169), // tanh(-2.0)
+        @as(f64, -0.7615941559557649), // tanh(-1.0)
+        @as(f64, 0.0), // tanh(0.0)
+        @as(f64, 0.7615941559557649), // tanh(1.0)
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

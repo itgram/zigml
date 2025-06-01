@@ -1,6 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Subtract function node.
 /// The Subtract node represents the subtraction operation between two tensors.
@@ -100,3 +101,377 @@ pub const Subtract = struct {
         return Node.init(self);
     }
 };
+
+test "subtract basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors with test values
+    const xTensor = try graph.tensor(&[_]usize{6});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+    xTensor.data[4] = 2.0; // positive input
+    xTensor.data[5] = 3.0; // positive input
+
+    const yTensor = try graph.tensor(&[_]usize{6});
+    defer yTensor.deinit();
+    yTensor.data[0] = 3.0; // positive input
+    yTensor.data[1] = 0.0; // zero input
+    yTensor.data[2] = 1.0; // positive input
+    yTensor.data[3] = -1.0; // negative input
+    yTensor.data[4] = 2.0; // positive input
+    yTensor.data[5] = -2.0; // negative input
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create subtract operation
+    var sub_op = try graph.subtract(x.node(), y.node());
+    defer sub_op.deinit();
+
+    // Evaluate forward pass
+    const result = try sub_op.eval();
+
+    // Expected values for each input pair:
+    // f(x, y) = x - y
+    const expected = [_]f64{
+        -2.0 - 3.0, // (-2.0) - 3.0 = -5.0
+        -1.0 - 0.0, // (-1.0) - 0.0 = -1.0
+        0.0 - 1.0, // 0.0 - 1.0 = -1.0
+        1.0 - -1.0, // 1.0 - (-1.0) = 2.0
+        2.0 - 2.0, // 2.0 - 2.0 = 0.0
+        3.0 - -2.0, // 3.0 - (-2.0) = 5.0
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Verify tensor shape is preserved
+    try std.testing.expectEqual(@as(usize, 6), result.shape[0]);
+}
+
+test "subtract gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors with test values
+    const xTensor = try graph.tensor(&[_]usize{6});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+    xTensor.data[4] = 2.0; // positive input
+    xTensor.data[5] = 3.0; // positive input
+
+    const yTensor = try graph.tensor(&[_]usize{6});
+    defer yTensor.deinit();
+    yTensor.data[0] = 3.0; // positive input
+    yTensor.data[1] = 0.0; // zero input
+    yTensor.data[2] = 1.0; // positive input
+    yTensor.data[3] = -1.0; // negative input
+    yTensor.data[4] = 2.0; // positive input
+    yTensor.data[5] = -2.0; // negative input
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create subtract operation
+    var sub_op = try graph.subtract(x.node(), y.node());
+    defer sub_op.deinit();
+
+    // First evaluate to cache the values
+    _ = try sub_op.eval();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{6});
+    defer gradTensor.deinit();
+    for (gradTensor.data) |*v| {
+        v.* = 1.0;
+    }
+
+    // Compute gradients
+    try sub_op.diff(gradTensor);
+
+    // Expected gradients for each input:
+    // ∂f/∂x = 1
+    // ∂f/∂y = -1
+    const expected_x_grad = [_]f64{
+        1.0, // ∂f/∂x = 1
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+    };
+
+    const expected_y_grad = [_]f64{
+        -1.0, // ∂f/∂y = -1
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+        -1.0,
+    };
+
+    for (x.grad.data, expected_x_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    for (y.grad.data, expected_y_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "subtract with multiple shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Test 1: 2D shape [2, 2]
+    {
+        // Create input tensors with shape [2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = -2.0; // [0,0]
+        xTensor.data[1] = -1.0; // [0,1]
+        xTensor.data[2] = 0.0; // [1,0]
+        xTensor.data[3] = 1.0; // [1,1]
+
+        const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer yTensor.deinit();
+        yTensor.data[0] = 3.0; // [0,0]
+        yTensor.data[1] = 0.0; // [0,1]
+        yTensor.data[2] = 1.0; // [1,0]
+        yTensor.data[3] = -1.0; // [1,1]
+
+        // Create variables
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+        var y = try graph.variable("y", yTensor);
+        defer y.deinit();
+
+        // Create subtract operation
+        var sub_op = try graph.subtract(x.node(), y.node());
+        defer sub_op.deinit();
+
+        // Evaluate forward pass
+        const result = try sub_op.eval();
+
+        // Expected values for each input pair:
+        // f(x, y) = x - y
+        const expected = [_]f64{
+            -2.0 - 3.0, // (-2.0) - 3.0 = -5.0
+            -1.0 - 0.0, // (-1.0) - 0.0 = -1.0
+            0.0 - 1.0, // 0.0 - 1.0 = -1.0
+            1.0 - -1.0, // 1.0 - (-1.0) = 2.0
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        defer gradTensor.deinit();
+        for (gradTensor.data) |*v| {
+            v.* = 1.0;
+        }
+
+        try sub_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1
+        // ∂f/∂y = -1
+        const expected_x_grad = [_]f64{
+            1.0, // ∂f/∂x = 1
+            1.0,
+            1.0,
+            1.0,
+        };
+
+        const expected_y_grad = [_]f64{
+            -1.0, // ∂f/∂y = -1
+            -1.0,
+            -1.0,
+            -1.0,
+        };
+
+        for (x.grad.data, expected_x_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        for (y.grad.data, expected_y_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+
+    // Test 2: 3D shape [2, 2, 2]
+    {
+        // Create input tensors with shape [2, 2, 2]
+        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer xTensor.deinit();
+        xTensor.data[0] = -2.0; // [0,0,0]
+        xTensor.data[1] = -1.0; // [0,0,1]
+        xTensor.data[2] = 0.0; // [0,1,0]
+        xTensor.data[3] = 1.0; // [0,1,1]
+        xTensor.data[4] = 2.0; // [1,0,0]
+        xTensor.data[5] = 3.0; // [1,0,1]
+        xTensor.data[6] = 4.0; // [1,1,0]
+        xTensor.data[7] = 5.0; // [1,1,1]
+
+        const yTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer yTensor.deinit();
+        yTensor.data[0] = 3.0; // [0,0,0]
+        yTensor.data[1] = 0.0; // [0,0,1]
+        yTensor.data[2] = 1.0; // [0,1,0]
+        yTensor.data[3] = -1.0; // [0,1,1]
+        yTensor.data[4] = 2.0; // [1,0,0]
+        yTensor.data[5] = -2.0; // [1,0,1]
+        yTensor.data[6] = 3.0; // [1,1,0]
+        yTensor.data[7] = -3.0; // [1,1,1]
+
+        // Create variables
+        var x = try graph.variable("x", xTensor);
+        defer x.deinit();
+        var y = try graph.variable("y", yTensor);
+        defer y.deinit();
+
+        // Create subtract operation
+        var sub_op = try graph.subtract(x.node(), y.node());
+        defer sub_op.deinit();
+
+        // Evaluate forward pass
+        const result = try sub_op.eval();
+
+        // Expected values for each input pair:
+        // f(x, y) = x - y
+        const expected = [_]f64{
+            -2.0 - 3.0, // (-2.0) - 3.0 = -5.0
+            -1.0 - 0.0, // (-1.0) - 0.0 = -1.0
+            0.0 - 1.0, // 0.0 - 1.0 = -1.0
+            1.0 - -1.0, // 1.0 - (-1.0) = 2.0
+            2.0 - 2.0, // 2.0 - 2.0 = 0.0
+            3.0 - -2.0, // 3.0 - (-2.0) = 5.0
+            4.0 - 3.0, // 4.0 - 3.0 = 1.0
+            5.0 - -3.0, // 5.0 - (-3.0) = 8.0
+        };
+
+        for (result.data, expected) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        // Test gradient computation
+        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        defer gradTensor.deinit();
+        for (gradTensor.data) |*v| {
+            v.* = 1.0;
+        }
+
+        try sub_op.diff(gradTensor);
+
+        // Expected gradients for each position:
+        // ∂f/∂x = 1
+        // ∂f/∂y = -1
+        const expected_x_grad = [_]f64{
+            1.0, // ∂f/∂x = 1
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        };
+
+        const expected_y_grad = [_]f64{
+            -1.0, // ∂f/∂y = -1
+            -1.0,
+            -1.0,
+            -1.0,
+            -1.0,
+            -1.0,
+            -1.0,
+            -1.0,
+        };
+
+        for (x.grad.data, expected_x_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+
+        for (y.grad.data, expected_y_grad) |actual, exp| {
+            try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+        }
+    }
+}
+
+test "subtract reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensors with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    const yTensor = try graph.tensor(&[_]usize{4});
+    defer yTensor.deinit();
+    yTensor.data[0] = 3.0; // positive input
+    yTensor.data[1] = 0.0; // zero input
+    yTensor.data[2] = 1.0; // positive input
+    yTensor.data[3] = -1.0; // negative input
+
+    // Create variables
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+    var y = try graph.variable("y", yTensor);
+    defer y.deinit();
+
+    // Create subtract operation
+    var sub_op = try graph.subtract(x.node(), y.node());
+    defer sub_op.deinit();
+
+    // First evaluation
+    const result1 = try sub_op.eval();
+
+    // Expected values for each input pair:
+    // f(x, y) = x - y
+    const expected1 = [_]f64{
+        -2.0 - 3.0, // (-2.0) - 3.0 = -5.0
+        -1.0 - 0.0, // (-1.0) - 0.0 = -1.0
+        0.0 - 1.0, // 0.0 - 1.0 = -1.0
+        1.0 - -1.0, // 1.0 - (-1.0) = 2.0
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset and evaluate again
+    sub_op.reset();
+    const result2 = try sub_op.eval();
+
+    // Expected values should be the same after reset
+    const expected2 = [_]f64{
+        -2.0 - 3.0, // (-2.0) - 3.0 = -5.0
+        -1.0 - 0.0, // (-1.0) - 0.0 = -1.0
+        0.0 - 1.0, // 0.0 - 1.0 = -1.0
+        1.0 - -1.0, // 1.0 - (-1.0) = 2.0
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

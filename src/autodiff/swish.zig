@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Swish function node.
 /// The Swish function is a smooth, non-monotonic activation function.
@@ -75,7 +76,7 @@ pub const Swish = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            const sig = 1 / (1 + std.math.exp(-v));
+            const sig = 1 / (1 + math.exp(-xv));
             v.* = dv * (sig + xv * sig * (1 - sig));
         }
 
@@ -99,3 +100,178 @@ pub const Swish = struct {
         self.x.reset();
     }
 };
+
+test "swish basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create swish operation
+    var swish_op = try graph.swish(x.node());
+    defer swish_op.deinit();
+
+    // First evaluate to cache the values
+    const result = try swish_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.23840584404423514), // swish(-2.0)
+        @as(f64, -0.2689414213699951), // swish(-1.0)
+        @as(f64, 0.0), // swish(0.0)
+        @as(f64, 0.7310585786300049), // swish(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "swish gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create swish operation
+    var swish_op = try graph.swish(x.node());
+    defer swish_op.deinit();
+
+    // First evaluate to cache the values
+    const result = try swish_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.23840584404423514), // swish(-2.0)
+        @as(f64, -0.2689414213699951), // swish(-1.0)
+        @as(f64, 0.0), // swish(0.0)
+        @as(f64, 0.7310585786300049), // swish(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try swish_op.diff(gradTensor);
+
+    // Expected gradients: sigmoid(x) + x * sigmoid(x) * (1 - sigmoid(x))
+    const expected_grad = [_]f64{
+        @as(f64, -0.09078424878489569), // sigmoid(-2.0) + (-2.0) * sigmoid(-2.0) * (1 - sigmoid(-2.0))
+        @as(f64, 0.07232948812851325), // sigmoid(-1.0) + (-1.0) * sigmoid(-1.0) * (1 - sigmoid(-1.0))
+        @as(f64, 0.5), // sigmoid(0.0) + 0.0 * sigmoid(0.0) * (1 - sigmoid(0.0))
+        @as(f64, 0.9276705118714868), // sigmoid(1.0) + 1.0 * sigmoid(1.0) * (1 - sigmoid(1.0))
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "swish with different shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create swish operation
+    var swish_op = try graph.swish(x.node());
+    defer swish_op.deinit();
+
+    // Evaluate
+    const result = try swish_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.23840584404423514), // swish(-2.0)
+        @as(f64, -0.2689414213699951), // swish(-1.0)
+        @as(f64, 0.0), // swish(0.0)
+        @as(f64, 0.7310585786300049), // swish(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "swish reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create swish operation
+    var swish_op = try graph.swish(x.node());
+    defer swish_op.deinit();
+
+    // First evaluation
+    const result1 = try swish_op.eval();
+    const expected1 = [_]f64{
+        @as(f64, -0.23840584404423514), // swish(-2.0)
+        @as(f64, -0.2689414213699951), // swish(-1.0)
+        @as(f64, 0.0), // swish(0.0)
+        @as(f64, 0.7310585786300049), // swish(1.0)
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset
+    swish_op.reset();
+
+    // Second evaluation
+    const result2 = try swish_op.eval();
+    const expected2 = [_]f64{
+        @as(f64, -0.23840584404423514), // swish(-2.0)
+        @as(f64, -0.2689414213699951), // swish(-1.0)
+        @as(f64, 0.0), // swish(0.0)
+        @as(f64, 0.7310585786300049), // swish(1.0)
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// Tan function node.
 /// The Tan node represents the tangent function applied to a tensor.
@@ -97,3 +98,165 @@ pub const Tan = struct {
         return Node.init(self);
     }
 };
+
+test "tan basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.0;
+    xTensor.data[1] = std.math.pi / 4.0;
+    xTensor.data[2] = std.math.pi / 3.0;
+    xTensor.data[3] = std.math.pi / 6.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tan operation
+    var tan_op = try graph.tan(x.node());
+    defer tan_op.deinit();
+
+    // Evaluate
+    const result = try tan_op.eval();
+    const expected = [_]f64{
+        std.math.tan(0.0),
+        std.math.tan(std.math.pi / 4.0),
+        std.math.tan(std.math.pi / 3.0),
+        std.math.tan(std.math.pi / 6.0),
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tan gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.0;
+    xTensor.data[1] = std.math.pi / 4.0;
+    xTensor.data[2] = std.math.pi / 3.0;
+    xTensor.data[3] = std.math.pi / 6.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tan operation
+    var tan_op = try graph.tan(x.node());
+    defer tan_op.deinit();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try tan_op.diff(gradTensor);
+
+    // Expected gradients: 1 / cos^2(x)
+    const expected_grad = [_]f64{
+        1.0 / (std.math.cos(0.0) * std.math.cos(0.0)),
+        1.0 / (std.math.cos(std.math.pi / 4.0) * std.math.cos(std.math.pi / 4.0)),
+        1.0 / (std.math.cos(std.math.pi / 3.0) * std.math.cos(std.math.pi / 3.0)),
+        1.0 / (std.math.cos(std.math.pi / 6.0) * std.math.cos(std.math.pi / 6.0)),
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tan with different shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.0;
+    xTensor.data[1] = std.math.pi / 4.0;
+    xTensor.data[2] = std.math.pi / 3.0;
+    xTensor.data[3] = std.math.pi / 6.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tan operation
+    var tan_op = try graph.tan(x.node());
+    defer tan_op.deinit();
+
+    // Evaluate
+    const result = try tan_op.eval();
+    const expected = [_]f64{
+        std.math.tan(0.0),
+        std.math.tan(std.math.pi / 4.0),
+        std.math.tan(std.math.pi / 3.0),
+        std.math.tan(std.math.pi / 6.0),
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "tan reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = 0.0;
+    xTensor.data[1] = std.math.pi / 4.0;
+    xTensor.data[2] = std.math.pi / 3.0;
+    xTensor.data[3] = std.math.pi / 6.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create tan operation
+    var tan_op = try graph.tan(x.node());
+    defer tan_op.deinit();
+
+    // First evaluation
+    const result1 = try tan_op.eval();
+    const expected1 = [_]f64{
+        std.math.tan(0.0),
+        std.math.tan(std.math.pi / 4.0),
+        std.math.tan(std.math.pi / 3.0),
+        std.math.tan(std.math.pi / 6.0),
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset
+    tan_op.reset();
+
+    // Second evaluation
+    const result2 = try tan_op.eval();
+    const expected2 = [_]f64{
+        std.math.tan(0.0),
+        std.math.tan(std.math.pi / 4.0),
+        std.math.tan(std.math.pi / 3.0),
+        std.math.tan(std.math.pi / 6.0),
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}

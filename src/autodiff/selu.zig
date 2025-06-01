@@ -2,6 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
+const Graph = @import("graph.zig").Graph;
 
 /// SELU function node.
 /// The Scaled Exponential Linear Unit (SELU) activation function.
@@ -100,3 +101,290 @@ pub const SELU = struct {
         return Node.init(self);
     }
 };
+
+test "selu basic" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Default SELU parameters
+    const default_alpha = 1.6732632423543772848170429916717;
+    const default_lambda = 1.0507009873554804934193349852946;
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create selu operation with default parameters
+    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    defer selu_op.deinit();
+
+    // Evaluate forward pass
+    const result = try selu_op.eval();
+
+    // Expected values for each input using default parameters:
+    // For x > 0: f(x) = λ * x
+    // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
+    const expected = [_]f64{
+        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, 0.0), // selu(0.0)
+        @as(f64, default_lambda), // selu(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "selu gradient" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Default SELU parameters
+    const default_alpha = 1.6732632423543772848170429916717;
+    const default_lambda = 1.0507009873554804934193349852946;
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create selu operation with default parameters
+    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    defer selu_op.deinit();
+
+    // First evaluate to cache the values
+    _ = try selu_op.eval();
+
+    // Create gradient tensor
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    // Compute gradients
+    try selu_op.diff(gradTensor);
+
+    // Expected gradients for each input using default parameters:
+    // For x > 0: ∂f/∂x = λ
+    // For x ≤ 0: ∂f/∂x = λ * α * exp(x)
+    const expected_grad = [_]f64{
+        @as(f64, default_lambda * default_alpha * math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, default_lambda * default_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, default_lambda * default_alpha), // selu'(0.0)
+        @as(f64, default_lambda), // selu'(1.0)
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "selu with 2d shapes" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Default SELU parameters
+    const default_alpha = 1.6732632423543772848170429916717;
+    const default_lambda = 1.0507009873554804934193349852946;
+
+    // Create input tensor with shape [2, 2]
+    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // [0,0]
+    xTensor.data[1] = -1.0; // [0,1]
+    xTensor.data[2] = 0.0; // [1,0]
+    xTensor.data[3] = 1.0; // [1,1]
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create selu operation with default parameters
+    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    defer selu_op.deinit();
+
+    // Evaluate forward pass
+    const result = try selu_op.eval();
+
+    // Expected values for each input using default parameters:
+    // For x > 0: f(x) = λ * x
+    // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
+    const expected = [_]f64{
+        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, 0.0), // selu(0.0)
+        @as(f64, default_lambda), // selu(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Test gradient computation
+    const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    try selu_op.diff(gradTensor);
+
+    // Expected gradients for each position using default parameters:
+    // For x > 0: ∂f/∂x = λ
+    // For x ≤ 0: ∂f/∂x = λ * α * exp(x)
+    const expected_grad = [_]f64{
+        @as(f64, default_lambda * default_alpha * math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, default_lambda * default_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, default_lambda * default_alpha), // selu'(0.0)
+        @as(f64, default_lambda), // selu'(1.0)
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "selu reset" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Default SELU parameters
+    const default_alpha = 1.6732632423543772848170429916717;
+    const default_lambda = 1.0507009873554804934193349852946;
+
+    // Create input tensor
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create selu operation with default parameters
+    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    defer selu_op.deinit();
+
+    // First evaluation
+    const result1 = try selu_op.eval();
+
+    // Expected values for each input using default parameters:
+    // For x > 0: f(x) = λ * x
+    // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
+    const expected1 = [_]f64{
+        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, 0.0), // selu(0.0)
+        @as(f64, default_lambda), // selu(1.0)
+    };
+
+    for (result1.data, expected1) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Reset and evaluate again
+    selu_op.reset();
+    const result2 = try selu_op.eval();
+
+    // Expected values should be the same after reset
+    const expected2 = [_]f64{
+        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, 0.0), // selu(0.0)
+        @as(f64, default_lambda), // selu(1.0)
+    };
+
+    for (result2.data, expected2) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "selu custom parameters" {
+    const allocator = std.testing.allocator;
+    var graph = Graph.init(allocator);
+
+    // Create input tensor with test values
+    const xTensor = try graph.tensor(&[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0; // negative input
+    xTensor.data[1] = -1.0; // negative input
+    xTensor.data[2] = 0.0; // zero input
+    xTensor.data[3] = 1.0; // positive input
+
+    // Create variable
+    var x = try graph.variable("x", xTensor);
+    defer x.deinit();
+
+    // Create selu operation with custom parameters
+    const custom_alpha = 2.0;
+    const custom_lambda = 1.5;
+    var selu_op = try graph.selu(x.node(), custom_alpha, custom_lambda);
+    defer selu_op.deinit();
+
+    // Evaluate forward pass
+    const result = try selu_op.eval();
+
+    // Expected values for each input with custom parameters:
+    // -2.0: λ * α * (exp(-2.0) - 1)
+    // -1.0: λ * α * (exp(-1.0) - 1)
+    //  0.0: 0
+    //  1.0: λ * 1.0
+    const expected = [_]f64{
+        @as(f64, custom_lambda * custom_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, custom_lambda * custom_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, 0.0), // selu(0.0)
+        @as(f64, custom_lambda), // selu(1.0)
+    };
+
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Test gradient computation
+    const gradTensor = try graph.tensor(&[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    try selu_op.diff(gradTensor);
+
+    // Expected gradients for each input with custom parameters:
+    // -2.0: λ * α * exp(-2.0)
+    // -1.0: λ * α * exp(-1.0)
+    //  0.0: λ * α * exp(0.0)
+    //  1.0: λ
+    const expected_grad = [_]f64{
+        @as(f64, custom_lambda * custom_alpha * math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, custom_lambda * custom_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, custom_lambda * custom_alpha), // selu'(0.0)
+        @as(f64, custom_lambda), // selu'(1.0)
+    };
+
+    for (x.grad.data, expected_grad) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
