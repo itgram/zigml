@@ -12,14 +12,14 @@ const Tensor = @import("tensor.zig").Tensor;
 /// - For negative inputs: f(x) = α * (exp(x) - 1)
 /// where α is a small positive constant (default 0.01).
 /// The ELU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
-pub const Elu = struct {
+pub const ELU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
     x: Node,
     alpha: f64 = 0.01, // small slope for negative inputs
 
-    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*Elu {
-        const ptr = try allocator.create(Elu);
+    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*ELU {
+        const ptr = try allocator.create(ELU);
         ptr.allocator = allocator;
         ptr.value = null;
         ptr.x = x;
@@ -33,7 +33,7 @@ pub const Elu = struct {
     /// f(x) = x if x > 0 else α * (exp(x) - 1)
     /// where α is a small positive constant (default 0.01).
     /// The ELU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
-    pub fn eval(self: *Elu) *Tensor {
+    pub fn eval(self: *ELU) *Tensor {
         if (self.value) |v| {
             return v;
         }
@@ -46,7 +46,7 @@ pub const Elu = struct {
             v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1);
         }
 
-        std.debug.print("Elu-eval: value: {?}\n", .{self.value});
+        std.debug.print("ELU-eval: value: {?}\n", .{self.value});
 
         return self.value.?;
     }
@@ -56,7 +56,7 @@ pub const Elu = struct {
     /// ∂f / ∂x = 1 if x > 0 else α * exp(x)
     /// where α is a small positive constant (default 0.01).
     /// The gradient of the ELU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Elu, dval: *Tensor) void {
+    pub fn diff(self: *ELU, dval: *Tensor) void {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
@@ -67,10 +67,10 @@ pub const Elu = struct {
 
         self.x.diff(grad);
 
-        std.debug.print("Elu-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+        std.debug.print("ELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    pub fn node(self: *Elu) Node {
+    pub fn node(self: *ELU) Node {
         return Node.init(self);
     }
 };

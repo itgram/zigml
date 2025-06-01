@@ -14,15 +14,15 @@ const Tensor = @import("tensor.zig").Tensor;
 /// The PReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
 /// The PReLU function is particularly useful in deep neural networks where the ReLU function may lead to dead neurons.
 /// It allows the model to learn a small slope for negative inputs, which can help improve gradient flow during training.
-pub const PRelu = struct {
+pub const PReLU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
     grad: *Tensor, // gradient of alpha
     x: Node,
     alpha: *Tensor = 0.01, // learnable parameter (trainable)
 
-    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: *Tensor) !*PRelu {
-        const ptr = try allocator.create(PRelu);
+    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: *Tensor) !*PReLU {
+        const ptr = try allocator.create(PReLU);
         ptr.allocator = allocator;
         ptr.value = null;
         ptr.grad = try Tensor.init(allocator, alpha.shape);
@@ -41,7 +41,7 @@ pub const PRelu = struct {
     /// The PReLU function is differentiable everywhere, making it suitable for backpropagation in neural networks.
     /// The PReLU function is particularly useful in deep neural networks where the ReLU function may lead to dead neurons.
     /// It allows the model to learn a small slope for negative inputs, which can help improve gradient flow during training.
-    pub fn eval(self: *PRelu) *Tensor {
+    pub fn eval(self: *PReLU) *Tensor {
         if (self.value) |v| {
             return v;
         }
@@ -54,7 +54,7 @@ pub const PRelu = struct {
             v.* = if (xv > 0) xv else alpha * xv;
         }
 
-        std.debug.print("PRelu-eval: value: {?}, alpha: {}\n", .{ self.value, self.alpha });
+        std.debug.print("PReLU-eval: value: {?}, alpha: {}\n", .{ self.value, self.alpha });
 
         return self.value.?;
     }
@@ -65,7 +65,7 @@ pub const PRelu = struct {
     /// ∂f / ∂α = x if x > 0 else 0
     /// where α is a learnable parameter (default 0.01).
     /// The gradient of the PReLU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *PRelu, dval: *Tensor) void {
+    pub fn diff(self: *PReLU, dval: *Tensor) void {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
@@ -77,10 +77,10 @@ pub const PRelu = struct {
 
         self.x.diff(grad);
 
-        std.debug.print("PRelu-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
+        std.debug.print("PReLU-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
     }
 
-    pub fn node(self: *PRelu) Node {
+    pub fn node(self: *PReLU) Node {
         return Node.init(self);
     }
 };

@@ -14,8 +14,8 @@ pub const Node = struct {
     };
 
     // cast concrete implementation types/objs to interface
-    pub fn init(obj: anytype) Node {
-        const T = @TypeOf(obj);
+    pub fn init(pointer: anytype) Node {
+        const T = @TypeOf(pointer);
         const ptrInfo = @typeInfo(T);
 
         std.debug.assert(ptrInfo == .pointer); // Must be a pointer
@@ -23,18 +23,18 @@ pub const Node = struct {
         std.debug.assert(@typeInfo(ptrInfo.pointer.child) == .@"struct"); // Must point to a struct
 
         const impl = struct {
-            fn eval(pointer: *anyopaque) *Tensor {
-                const self: T = @ptrCast(@alignCast(pointer));
+            fn eval(ptr: *anyopaque) *Tensor {
+                const self: T = @ptrCast(@alignCast(ptr));
                 return self.eval();
             }
-            fn diff(pointer: *anyopaque, dval: *Tensor) void {
-                const self: T = @ptrCast(@alignCast(pointer));
+            fn diff(ptr: *anyopaque, dval: *Tensor) void {
+                const self: T = @ptrCast(@alignCast(ptr));
                 self.diff(dval);
             }
         };
 
         return .{
-            .ptr = obj,
+            .ptr = pointer,
             .vtab = &.{
                 .evalFn = impl.eval,
                 .diffFn = impl.diff,

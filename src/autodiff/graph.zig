@@ -4,7 +4,7 @@ pub const Add = @import("add.zig").Add;
 pub const Constant = @import("constant.zig").Constant;
 pub const Cos = @import("cos.zig").Cos;
 pub const Divide = @import("divide.zig").Divide;
-pub const Elu = @import("elu.zig").Elu;
+pub const ELU = @import("elu.zig").ELU;
 pub const Exp = @import("exp.zig").Exp;
 pub const GELU = @import("gelu.zig").GELU;
 pub const LeakyReLU = @import("leaky_relu.zig").LeakyReLU;
@@ -14,9 +14,9 @@ pub const Log = @import("log.zig").Log;
 pub const Multiply = @import("multiply.zig").Multiply;
 pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
-pub const PRelu = @import("prelu.zig").PRelu;
-pub const Relu = @import("relu.zig").Relu;
-pub const Selu = @import("selu.zig").Selu;
+pub const PReLU = @import("prelu.zig").PReLU;
+pub const ReLU = @import("relu.zig").ReLU;
+pub const SELU = @import("selu.zig").SELU;
 pub const Sigmoid = @import("sigmoid.zig").Sigmoid;
 pub const Sin = @import("sin.zig").Sin;
 pub const Softmax = @import("softmax.zig").Softmax;
@@ -61,8 +61,8 @@ pub const Graph = struct {
     }
 
     /// Create an elu node
-    pub fn elu(self: *Graph, x: Node, alpha: f64) !*Elu {
-        return try Elu.init(self.allocator, x, alpha);
+    pub fn elu(self: *Graph, x: Node, alpha: f64) !*ELU {
+        return try ELU.init(self.allocator, x, alpha);
     }
 
     /// Create an exponential node
@@ -106,18 +106,18 @@ pub const Graph = struct {
     }
 
     /// Create a parametric relu node
-    pub fn prelu(self: *Graph, x: Node, alpha: *Tensor) !*PRelu {
-        return try PRelu.init(self.allocator, x, alpha);
+    pub fn prelu(self: *Graph, x: Node, alpha: *Tensor) !*PReLU {
+        return try PReLU.init(self.allocator, x, alpha);
     }
 
     /// Create a relu node
-    pub fn relu(self: *Graph, x: Node) !*Relu {
-        return try Relu.init(self.allocator, x);
+    pub fn relu(self: *Graph, x: Node) !*ReLU {
+        return try ReLU.init(self.allocator, x);
     }
 
     /// Create a selu node
-    pub fn selu(self: *Graph, x: Node, alpha: f64, lambda: f64) !*Selu {
-        return try Selu.init(self.allocator, x, alpha, lambda);
+    pub fn selu(self: *Graph, x: Node, alpha: f64, lambda: f64) !*SELU {
+        return try SELU.init(self.allocator, x, alpha, lambda);
     }
 
     /// Create a sigmoid node

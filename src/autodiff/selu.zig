@@ -3,7 +3,7 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Selu function node.
+/// SELU function node.
 /// The Scaled Exponential Linear Unit (SELU) activation function.
 /// It is defined as:
 /// f(x) = λ * x if x > 0 else λ * α * (exp(x) - 1)
@@ -12,15 +12,15 @@ const Tensor = @import("tensor.zig").Tensor;
 /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
 /// and α is a small positive constant (default 1.6732632423543772848170429916717).
 /// The SELU function is designed to self-normalize, meaning it helps maintain a mean of 0 and variance of 1 across layers.
-pub const Selu = struct {
+pub const SELU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
     x: Node,
     alpha: f64 = 1.6732632423543772848170429916717, // small slope for negative inputs
     lambda: f64 = 1.0507009873554804934193349852946, // scaling factor for positive inputs
 
-    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64, lambda: f64) !*Selu {
-        const ptr = try allocator.create(Selu);
+    pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64, lambda: f64) !*SELU {
+        const ptr = try allocator.create(SELU);
         ptr.allocator = allocator;
         ptr.value = null;
         ptr.x = x;
@@ -36,7 +36,7 @@ pub const Selu = struct {
     /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
     /// and α is a small positive constant (default 1.6732632423543772848170429916717).
     /// The SELU function is designed to self-normalize, meaning it helps maintain a mean of 0 and variance of 1 across layers.
-    pub fn eval(self: *Selu) *Tensor {
+    pub fn eval(self: *SELU) *Tensor {
         if (self.value) |v| {
             return v;
         }
@@ -49,7 +49,7 @@ pub const Selu = struct {
             v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (@exp(xv) - 1);
         }
 
-        std.debug.print("Selu-eval: value: {?}\n", .{self.value});
+        std.debug.print("SELU-eval: value: {?}\n", .{self.value});
 
         return self.value.?;
     }
@@ -60,7 +60,7 @@ pub const Selu = struct {
     /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
     /// and α is a small positive constant (default 1.6732632423543772848170429916717).
     /// The gradient of the SELU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Selu, dval: *Tensor) void {
+    pub fn diff(self: *SELU, dval: *Tensor) void {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
@@ -71,10 +71,10 @@ pub const Selu = struct {
 
         self.x.diff(grad);
 
-        std.debug.print("Selu-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+        std.debug.print("SELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    pub fn node(self: *Selu) Node {
+    pub fn node(self: *SELU) Node {
         return Node.init(self);
     }
 };

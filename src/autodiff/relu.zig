@@ -3,7 +3,7 @@ const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 
-/// Relu function node.
+/// ReLU function node.
 /// The ReLU (Rectified Linear Unit) activation function
 /// It is commonly used in neural networks as an activation function.
 /// It is defined as:
@@ -12,13 +12,13 @@ const Tensor = @import("tensor.zig").Tensor;
 /// - For negative inputs: f(x) = 0
 /// where x is the input tensor.
 /// The ReLU function is non-linear and allows for faster training of deep neural networks.
-pub const Relu = struct {
+pub const ReLU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
     x: Node,
 
-    pub fn init(allocator: std.mem.Allocator, x: Node) !*Relu {
-        const ptr = try allocator.create(Relu);
+    pub fn init(allocator: std.mem.Allocator, x: Node) !*ReLU {
+        const ptr = try allocator.create(ReLU);
         ptr.allocator = allocator;
         ptr.value = null;
         ptr.x = x;
@@ -31,7 +31,7 @@ pub const Relu = struct {
     /// f(x) = x if x > 0 else 0
     /// where x is the input tensor.
     /// The ReLU function is non-linear and allows for faster training of deep neural networks.
-    pub fn eval(self: *Relu) *Tensor {
+    pub fn eval(self: *ReLU) *Tensor {
         if (self.value) |v| {
             return v;
         }
@@ -44,7 +44,7 @@ pub const Relu = struct {
             v.* = if (xv > 0) xv else 0;
         }
 
-        std.debug.print("Relu-eval: value: {?}\n", .{self.value});
+        std.debug.print("ReLU-eval: value: {?}\n", .{self.value});
 
         return self.value.?;
     }
@@ -54,7 +54,7 @@ pub const Relu = struct {
     /// ∂f / ∂x = 1 if x > 0 else 0
     /// where x is the input tensor.
     /// The gradient of the ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
-    pub fn diff(self: *Relu, dval: *Tensor) void {
+    pub fn diff(self: *ReLU, dval: *Tensor) void {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
@@ -65,10 +65,10 @@ pub const Relu = struct {
 
         self.x.diff(grad);
 
-        std.debug.print("Relu-diff: value: {?}, dval: {}\n", .{ self.value, dval });
+        std.debug.print("ReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
-    pub fn node(self: *Relu) Node {
+    pub fn node(self: *ReLU) Node {
         return Node.init(self);
     }
 };
