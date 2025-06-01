@@ -29,6 +29,16 @@ pub const Tanh = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Tanh) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the hyperbolic tangent function.
     /// The hyperbolic tangent function is defined as:
     /// f(x) = tanh(x) = (e^x - e^(-x)) / (e^x + e^(-x))

@@ -28,6 +28,16 @@ pub const Softmax = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Softmax) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the softmax function.
     /// The softmax function is defined as:
     /// f(x_i) = exp(x_i) / sum(exp(x_j)) for j in [1, ..., n]

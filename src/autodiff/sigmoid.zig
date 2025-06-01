@@ -26,6 +26,16 @@ pub const Sigmoid = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Sigmoid) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the Sigmoid function.
     /// The Sigmoid function is defined as:
     /// f(x) = 1 / (1 + exp(-x))

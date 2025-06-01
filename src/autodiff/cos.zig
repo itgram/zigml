@@ -28,6 +28,16 @@ pub const Cos = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Cos) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the cosine function.
     /// The cosine function is defined as:
     /// f(x) = cos(x)

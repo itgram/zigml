@@ -28,6 +28,16 @@ pub const Step = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Step) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the step function.
     /// The step function is defined as:
     /// f(x) = 1 if x >= threshold, else 0

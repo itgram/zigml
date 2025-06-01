@@ -29,6 +29,16 @@ pub const LeakyReLU = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *LeakyReLU) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the Leaky ReLU function.
     /// The Leaky ReLU function is defined as:
     /// f(x) = x if x > 0 else α * x

@@ -35,6 +35,14 @@ pub const Variable = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Variable) void {
+        self.value.deinit();
+        self.grad.deinit();
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the variable.
     /// The variable is defined as:
     /// f(x) = x

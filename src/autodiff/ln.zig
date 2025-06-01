@@ -28,6 +28,16 @@ pub const Ln = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Ln) void {
+        if (self.value) |v| {
+            v.deinit();
+            self.allocator.destroy(v);
+        }
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the natural logarithm function.
     /// The natural logarithm function is defined as:
     /// f(x) = ln(x)

@@ -20,6 +20,12 @@ pub const Constant = struct {
         return ptr;
     }
 
+    /// Deinitializes the node and frees all allocated resources.
+    /// This should be called when the node is no longer needed.
+    pub fn deinit(self: *Constant) void {
+        self.allocator.destroy(self);
+    }
+
     /// Evaluate the constant function.
     /// The constant function is defined as:
     /// f(x) = value
