@@ -18,6 +18,7 @@ pub const Log = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new logarithm node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Log {
         const ptr = try allocator.create(Log);
         ptr.allocator = allocator;
@@ -52,7 +53,7 @@ pub const Log = struct {
 
     /// Compute the gradient of the logarithm function.
     /// The gradient of the logarithm function is defined as:
-    /// ∂f / ∂x = 1 / (x * ln(10))
+    /// ∂f/∂x = 1 / (x * ln(10))
     /// where x is the input tensor.
     /// The gradient of the logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Log, dval: *Tensor) void {
@@ -69,6 +70,7 @@ pub const Log = struct {
         std.debug.print("Log-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this logarithm node as a generic Node interface.
     pub fn node(self: *Log) Node {
         return Node.init(self);
     }

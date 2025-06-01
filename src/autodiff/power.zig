@@ -17,6 +17,7 @@ pub const Power = struct {
     x: Node,
     y: Node,
 
+    /// Creates a new power node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Power {
         const ptr = try allocator.create(Power);
         ptr.allocator = allocator;
@@ -52,8 +53,8 @@ pub const Power = struct {
 
     /// Compute the gradient of the power function.
     /// The gradient of the power function is defined as:
-    /// ∂f / ∂x = y * x^(y-1)
-    /// ∂f / ∂y = x^y * ln(x)
+    /// ∂f/∂x = y * x^(y-1)
+    /// ∂f/∂y = x^y * ln(x)
     /// where x and y are the input tensors.
     /// The gradient of the power function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Power, dval: *Tensor) void {
@@ -74,6 +75,7 @@ pub const Power = struct {
         std.debug.print("Power-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this power node as a generic Node interface.
     pub fn node(self: *Power) Node {
         return Node.init(self);
     }

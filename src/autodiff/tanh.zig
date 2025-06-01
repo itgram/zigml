@@ -19,6 +19,7 @@ pub const Tanh = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new tanh node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Tanh {
         const ptr = try allocator.create(Tanh);
         ptr.allocator = allocator;
@@ -54,7 +55,7 @@ pub const Tanh = struct {
 
     /// Compute the gradient of the hyperbolic tangent function.
     /// The gradient of the hyperbolic tangent function is defined as:
-    /// ∂f / ∂x = 1 - tanh^2(x)
+    /// ∂f/∂x = 1 - tanh^2(x)
     /// where x is the input tensor.
     /// The gradient of the hyperbolic tangent function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Tanh, dval: *Tensor) void {
@@ -69,6 +70,7 @@ pub const Tanh = struct {
         std.debug.print("Tanh-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this tanh node as a generic Node interface.
     pub fn node(self: *Tanh) Node {
         return Node.init(self);
     }

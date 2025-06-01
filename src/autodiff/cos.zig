@@ -18,6 +18,7 @@ pub const Cos = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new cosine node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Cos {
         const ptr = try allocator.create(Cos);
         ptr.allocator = allocator;
@@ -53,7 +54,7 @@ pub const Cos = struct {
 
     /// Compute the gradient of the cosine function.
     /// The gradient of the cosine function is defined as:
-    /// ∂f / ∂x = -sin(x)
+    /// ∂f/∂x = -sin(x)
     /// where x is the input tensor.
     /// The gradient of the cosine function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Cos, dval: *Tensor) void {
@@ -70,6 +71,7 @@ pub const Cos = struct {
         std.debug.print("Cos-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this cosine node as a generic Node interface.
     pub fn node(self: *Cos) Node {
         return Node.init(self);
     }

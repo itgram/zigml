@@ -24,6 +24,7 @@ pub const Variable = struct {
     value: *Tensor,
     grad: *Tensor,
 
+    /// Creates a new variable node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) !*Variable {
         const ptr = try allocator.create(Variable);
         ptr.name = name;
@@ -49,7 +50,7 @@ pub const Variable = struct {
 
     /// Compute the gradient of the variable.
     /// The gradient of the variable is defined as:
-    /// ∂f / ∂x = 1
+    /// ∂f/∂x = 1
     /// where x is the input tensor.
     /// The gradient of the variable is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Variable, dval: *Tensor) void {
@@ -60,6 +61,7 @@ pub const Variable = struct {
         std.debug.print("Variable-diff: {s}, value: {}, grad: {}, dval: {}\n", .{ self.name, self.value, self.grad, dval });
     }
 
+    /// Returns this variable node as a generic Node interface.
     pub fn node(self: *Variable) Node {
         return Node.init(self);
     }

@@ -20,6 +20,7 @@ pub const Linear = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new linear node with the given input, weight, and bias nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Linear {
         const ptr = try allocator.create(Linear);
         ptr.allocator = allocator;
@@ -55,7 +56,7 @@ pub const Linear = struct {
 
     /// Compute the gradient of the linear function.
     /// The gradient of the linear function is defined as:
-    /// ∂f / ∂x = 1
+    /// ∂f/∂x = 1
     /// where x is the input tensor.
     /// The gradient of the linear function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Linear, dval: *Tensor) void {
@@ -64,6 +65,7 @@ pub const Linear = struct {
         std.debug.print("Linear-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this linear node as a generic Node interface.
     pub fn node(self: *Linear) Node {
         return Node.init(self);
     }

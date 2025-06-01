@@ -18,6 +18,7 @@ pub const Tan = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new tangent node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Tan {
         const ptr = try allocator.create(Tan);
         ptr.allocator = allocator;
@@ -53,7 +54,7 @@ pub const Tan = struct {
 
     /// Compute the gradient of the tangent function.
     /// The gradient of the tangent function is defined as:
-    /// ∂f / ∂x = sec^2(x)
+    /// ∂f/∂x = sec^2(x)
     /// where x is the input tensor.
     /// The gradient of the tangent function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Tan, dval: *Tensor) void {
@@ -71,6 +72,7 @@ pub const Tan = struct {
         std.debug.print("Tan-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this tangent node as a generic Node interface.
     pub fn node(self: *Tan) Node {
         return Node.init(self);
     }

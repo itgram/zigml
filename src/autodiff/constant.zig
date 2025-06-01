@@ -12,6 +12,7 @@ const Tensor = @import("tensor.zig").Tensor;
 pub const Constant = struct {
     value: *Tensor,
 
+    /// Creates a new constant node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, value: *Tensor) !*Constant {
         const ptr = try allocator.create(Constant);
         ptr.value = value;
@@ -32,13 +33,14 @@ pub const Constant = struct {
 
     /// Compute the gradient of the constant function.
     /// The gradient of the constant function is defined as:
-    /// ∂f / ∂x = 0
+    /// ∂f/∂x = 0
     /// where x is the input tensor.
     /// The gradient of the constant function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Constant, dval: *Tensor) void {
         std.debug.print("Constant-diff: {}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this constant node as a generic Node interface.
     pub fn node(self: *Constant) Node {
         return Node.init(self);
     }

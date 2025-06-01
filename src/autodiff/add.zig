@@ -18,6 +18,7 @@ pub const Add = struct {
     x: Node,
     y: Node,
 
+    /// Creates a new addition node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Add {
         const ptr = try allocator.create(Add);
         ptr.allocator = allocator;
@@ -54,8 +55,8 @@ pub const Add = struct {
 
     /// Compute the gradient of the add function.
     /// The gradient of the add function is defined as:
-    /// ∂f / ∂x = 1
-    /// ∂f / ∂y = 1
+    /// ∂f/∂x = 1
+    /// ∂f/∂y = 1
     /// where x and y are the input tensors.
     /// The gradient of the add function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Add, dval: *Tensor) void {
@@ -65,6 +66,7 @@ pub const Add = struct {
         std.debug.print("Add-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this addition node as a generic Node interface.
     pub fn node(self: *Add) Node {
         return Node.init(self);
     }

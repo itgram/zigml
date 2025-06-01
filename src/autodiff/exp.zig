@@ -17,6 +17,7 @@ pub const Exp = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new exponential node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Exp {
         const ptr = try allocator.create(Exp);
         ptr.allocator = allocator;
@@ -51,7 +52,7 @@ pub const Exp = struct {
 
     /// Compute the gradient of the exponential function.
     /// The gradient of the exponential function is defined as:
-    /// ∂f / ∂x = e^x
+    /// ∂f/∂x = e^x
     /// where x is the input tensor.
     /// The gradient of the exponential function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Exp, dval: *Tensor) void {
@@ -65,6 +66,7 @@ pub const Exp = struct {
         std.debug.print("Exp-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this exponential node as a generic Node interface.
     pub fn node(self: *Exp) Node {
         return Node.init(self);
     }

@@ -16,6 +16,7 @@ pub const Sigmoid = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new sigmoid node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Sigmoid {
         const ptr = try allocator.create(Sigmoid);
         ptr.allocator = allocator;
@@ -52,7 +53,7 @@ pub const Sigmoid = struct {
 
     /// Compute the gradient of the Sigmoid function.
     /// The gradient of the Sigmoid function is defined as:
-    /// ∂f / ∂x = σ(x) * (1 - σ(x))
+    /// ∂f/∂x = σ(x) * (1 - σ(x))
     /// where x is the input tensor.
     /// The gradient of the Sigmoid function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Sigmoid, dval: *Tensor) void {
@@ -67,6 +68,7 @@ pub const Sigmoid = struct {
         std.debug.print("Sigmoid-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this sigmoid node as a generic Node interface.
     pub fn node(self: *Sigmoid) Node {
         return Node.init(self);
     }

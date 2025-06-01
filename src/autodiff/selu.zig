@@ -19,6 +19,7 @@ pub const SELU = struct {
     alpha: f64 = 1.6732632423543772848170429916717, // small slope for negative inputs
     lambda: f64 = 1.0507009873554804934193349852946, // scaling factor for positive inputs
 
+    /// Creates a new SELU node with the given input node and optional alpha and lambda values.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64, lambda: f64) !*SELU {
         const ptr = try allocator.create(SELU);
         ptr.allocator = allocator;
@@ -56,7 +57,7 @@ pub const SELU = struct {
 
     /// Compute the gradient of the SELU function.
     /// The gradient of the SELU function is defined as:
-    /// ∂f / ∂x = λ if x > 0 else λ * α * exp(x)
+    /// ∂f/∂x = λ if x > 0 else λ * α * exp(x)
     /// where λ is a scaling factor (default 1.0507009873554804934193349852946)
     /// and α is a small positive constant (default 1.6732632423543772848170429916717).
     /// The gradient of the SELU function is typically used in conjunction with other nodes to build complex computation graphs.
@@ -74,6 +75,7 @@ pub const SELU = struct {
         std.debug.print("SELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this SELU node as a generic Node interface.
     pub fn node(self: *SELU) Node {
         return Node.init(self);
     }

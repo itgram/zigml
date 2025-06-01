@@ -19,6 +19,7 @@ pub const Swish = struct {
     const sqrt_2_over_pi: f32 = 0.79788456; // sqrt(2 / π)
     const coeff: f32 = 0.044715;
 
+    /// Creates a new Swish node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Swish {
         const ptr = try allocator.create(Swish);
         ptr.allocator = allocator;
@@ -55,7 +56,7 @@ pub const Swish = struct {
 
     /// Compute the gradient of the Swish function.
     /// The gradient of the Swish function is defined as:
-    /// ∂f / ∂x = σ(x) + x * σ(x) * (1 - σ(x))
+    /// ∂f/∂x = σ(x) + x * σ(x) * (1 - σ(x))
     /// where σ is the sigmoid function.
     /// The gradient of the Swish function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Swish, dval: *Tensor) void {
@@ -73,6 +74,7 @@ pub const Swish = struct {
         std.debug.print("Swish-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this Swish node as a generic Node interface.
     pub fn node(self: *Swish) Node {
         return Node.init(self);
     }

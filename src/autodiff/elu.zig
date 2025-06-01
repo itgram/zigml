@@ -18,6 +18,7 @@ pub const ELU = struct {
     x: Node,
     alpha: f64 = 0.01, // small slope for negative inputs
 
+    /// Creates a new ELU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*ELU {
         const ptr = try allocator.create(ELU);
         ptr.allocator = allocator;
@@ -53,7 +54,7 @@ pub const ELU = struct {
 
     /// Compute the gradient of the ELU function.
     /// The gradient of the ELU function is defined as:
-    /// ∂f / ∂x = 1 if x > 0 else α * exp(x)
+    /// ∂f/∂x = 1 if x > 0 else α * exp(x)
     /// where α is a small positive constant (default 0.01).
     /// The gradient of the ELU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *ELU, dval: *Tensor) void {
@@ -70,6 +71,7 @@ pub const ELU = struct {
         std.debug.print("ELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this ELU node as a generic Node interface.
     pub fn node(self: *ELU) Node {
         return Node.init(self);
     }

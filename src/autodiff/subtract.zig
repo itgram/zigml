@@ -17,6 +17,7 @@ pub const Subtract = struct {
     x: Node,
     y: Node,
 
+    /// Creates a new subtraction node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Subtract {
         const ptr = try allocator.create(Subtract);
         ptr.allocator = allocator;
@@ -53,8 +54,8 @@ pub const Subtract = struct {
 
     /// Compute the gradient of the subtract function.
     /// The gradient of the subtract function is defined as:
-    /// ∂f / ∂x = 1
-    /// ∂f / ∂y = -1
+    /// ∂f/∂x = 1
+    /// ∂f/∂y = -1
     /// where x and y are the input tensors.
     /// The gradient of the subtract function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Subtract, dval: *Tensor) void {
@@ -72,6 +73,7 @@ pub const Subtract = struct {
         std.debug.print("Subtract-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this subtraction node as a generic Node interface.
     pub fn node(self: *Subtract) Node {
         return Node.init(self);
     }

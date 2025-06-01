@@ -17,6 +17,7 @@ pub const Step = struct {
     x: Node,
     threshold: f64 = 0.0, // Default threshold value
 
+    /// Creates a new step node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, threshold: f64) !*Step {
         const ptr = try allocator.create(Step);
         ptr.allocator = allocator;
@@ -54,7 +55,7 @@ pub const Step = struct {
 
     /// Compute the gradient of the step function.
     /// The gradient of the step function is defined as:
-    /// ∂f / ∂x = 0
+    /// ∂f/∂x = 0
     /// where x is the input tensor.
     /// The gradient of the step function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Step, dval: *Tensor) void {
@@ -69,6 +70,7 @@ pub const Step = struct {
         std.debug.print("Step-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this step node as a generic Node interface.
     pub fn node(self: *Step) Node {
         return Node.init(self);
     }

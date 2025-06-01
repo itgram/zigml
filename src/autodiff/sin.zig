@@ -18,6 +18,7 @@ pub const Sin = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new sine node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Sin {
         const ptr = try allocator.create(Sin);
         ptr.allocator = allocator;
@@ -53,7 +54,7 @@ pub const Sin = struct {
 
     /// Compute the gradient of the sine function.
     /// The gradient of the sine function is defined as:
-    /// ∂f / ∂x = cos(x)
+    /// ∂f/∂x = cos(x)
     /// where x is the input tensor.
     /// The gradient of the sine function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Sin, dval: *Tensor) void {
@@ -70,6 +71,7 @@ pub const Sin = struct {
         std.debug.print("Sin-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this sine node as a generic Node interface.
     pub fn node(self: *Sin) Node {
         return Node.init(self);
     }

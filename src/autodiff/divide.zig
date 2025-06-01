@@ -18,6 +18,7 @@ pub const Divide = struct {
     x: Node,
     y: Node,
 
+    /// Creates a new division node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Divide {
         const ptr = try allocator.create(Divide);
         ptr.allocator = allocator;
@@ -54,8 +55,8 @@ pub const Divide = struct {
 
     /// Compute the gradient of the divide function.
     /// The gradient of the divide function is defined as:
-    /// ∂f / ∂x = 1 / y
-    /// ∂f / ∂y = -x / (y * y)
+    /// ∂f/∂x = 1 / y
+    /// ∂f/∂y = -x / (y * y)
     /// where x and y are the input tensors.
     /// The gradient of the divide function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Divide, dval: *Tensor) void {
@@ -76,6 +77,7 @@ pub const Divide = struct {
         std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this division node as a generic Node interface.
     pub fn node(self: *Divide) Node {
         return Node.init(self);
     }

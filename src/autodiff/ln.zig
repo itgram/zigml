@@ -18,6 +18,7 @@ pub const Ln = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new natural logarithm node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Ln {
         const ptr = try allocator.create(Ln);
         ptr.allocator = allocator;
@@ -51,7 +52,7 @@ pub const Ln = struct {
     }
 
     /// The gradient of the natural logarithm function is defined as:
-    /// ∂f / ∂x = 1 / x
+    /// ∂f/∂x = 1 / x
     /// where x is the input tensor.
     /// The gradient of the natural logarithm function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Ln, dval: *Tensor) void {
@@ -68,6 +69,7 @@ pub const Ln = struct {
         std.debug.print("Ln-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this natural logarithm node as a generic Node interface.
     pub fn node(self: *Ln) Node {
         return Node.init(self);
     }

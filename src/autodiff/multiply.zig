@@ -18,6 +18,7 @@ pub const Multiply = struct {
     x: Node,
     y: Node,
 
+    /// Creates a new multiplication node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Multiply {
         const ptr = try allocator.create(Multiply);
         ptr.allocator = allocator;
@@ -54,8 +55,8 @@ pub const Multiply = struct {
 
     /// Compute the gradient of the multiply function.
     /// The gradient of the multiply function is defined as:
-    /// ∂f / ∂x = y
-    /// ∂f / ∂y = x
+    /// ∂f/∂x = y
+    /// ∂f/∂y = x
     /// where x and y are the input tensors.
     /// The gradient of the multiply function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Multiply, dval: *Tensor) void {
@@ -76,6 +77,7 @@ pub const Multiply = struct {
         std.debug.print("Multiply-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this multiplication node as a generic Node interface.
     pub fn node(self: *Multiply) Node {
         return Node.init(self);
     }

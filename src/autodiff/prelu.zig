@@ -21,6 +21,7 @@ pub const PReLU = struct {
     x: Node,
     alpha: *Tensor = 0.01, // learnable parameter (trainable)
 
+    /// Creates a new PReLU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: *Tensor) !*PReLU {
         const ptr = try allocator.create(PReLU);
         ptr.allocator = allocator;
@@ -61,7 +62,7 @@ pub const PReLU = struct {
 
     /// Compute the gradient of the PReLU function.
     /// The gradient of the PReLU function is defined as:
-    /// ∂f / ∂x = 1 if x > 0 else α
+    /// ∂f/∂x = 1 if x > 0 else α
     /// ∂f / ∂α = x if x > 0 else 0
     /// where α is a learnable parameter (default 0.01).
     /// The gradient of the PReLU function is typically used in conjunction with other nodes to build complex computation graphs.
@@ -80,6 +81,7 @@ pub const PReLU = struct {
         std.debug.print("PReLU-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
     }
 
+    /// Returns this PReLU node as a generic Node interface.
     pub fn node(self: *PReLU) Node {
         return Node.init(self);
     }

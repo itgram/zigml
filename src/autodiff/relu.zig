@@ -17,6 +17,7 @@ pub const ReLU = struct {
     value: ?*Tensor,
     x: Node,
 
+    /// Creates a new ReLU node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*ReLU {
         const ptr = try allocator.create(ReLU);
         ptr.allocator = allocator;
@@ -51,7 +52,7 @@ pub const ReLU = struct {
 
     /// Compute the gradient of the ReLU function.
     /// The gradient of the ReLU function is defined as:
-    /// ∂f / ∂x = 1 if x > 0 else 0
+    /// ∂f/∂x = 1 if x > 0 else 0
     /// where x is the input tensor.
     /// The gradient of the ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *ReLU, dval: *Tensor) void {
@@ -68,6 +69,7 @@ pub const ReLU = struct {
         std.debug.print("ReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this ReLU node as a generic Node interface.
     pub fn node(self: *ReLU) Node {
         return Node.init(self);
     }

@@ -18,6 +18,7 @@ pub const LeakyReLU = struct {
     x: Node,
     alpha: f64 = 0.01, // small slope for negative inputs
 
+    /// Creates a new LeakyReLU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*LeakyReLU {
         const ptr = try allocator.create(LeakyReLU);
         ptr.allocator = allocator;
@@ -53,7 +54,7 @@ pub const LeakyReLU = struct {
 
     /// Compute the gradient of the Leaky ReLU function.
     /// The gradient of the Leaky ReLU function is defined as:
-    /// ∂f / ∂x = 1 if x > 0 else α
+    /// ∂f/∂x = 1 if x > 0 else α
     /// where α is a small positive constant (default 0.01).
     /// The gradient of the Leaky ReLU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *LeakyReLU, dval: *Tensor) void {
@@ -70,6 +71,7 @@ pub const LeakyReLU = struct {
         std.debug.print("LeakyReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this LeakyReLU node as a generic Node interface.
     pub fn node(self: *LeakyReLU) Node {
         return Node.init(self);
     }

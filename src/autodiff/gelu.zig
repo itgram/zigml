@@ -20,6 +20,7 @@ pub const GELU = struct {
     const sqrt_2_over_pi: f32 = 0.79788456; // sqrt(2 / π)
     const coeff: f32 = 0.044715;
 
+    /// Creates a new GELU node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*GELU {
         const ptr = try allocator.create(GELU);
         ptr.allocator = allocator;
@@ -54,7 +55,7 @@ pub const GELU = struct {
 
     /// Compute the gradient of the GELU function.
     /// The gradient of the GELU function is defined as:
-    /// ∂f / ∂x = 0.5 * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3))) + 0.5 * x * (1 - tanh(sqrt(2 / π) * (x + 0.044715 * x^3))^2) * sqrt(2 / π) * (1 + 3 * 0.044715 * x^2)
+    /// ∂f/∂x = 0.5 * (1 + tanh(sqrt(2 / π) * (x + 0.044715 * x^3))) + 0.5 * x * (1 - tanh(sqrt(2 / π) * (x + 0.044715 * x^3))^2) * sqrt(2 / π) * (1 + 3 * 0.044715 * x^2)
     /// where x is the input tensor.
     /// The gradient of the GELU function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *GELU, dval: *Tensor) void {
@@ -74,6 +75,7 @@ pub const GELU = struct {
         std.debug.print("GELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this GELU node as a generic Node interface.
     pub fn node(self: *GELU) Node {
         return Node.init(self);
     }

@@ -17,6 +17,7 @@ pub const Softmax = struct {
     x: Node,
     axis: usize, // Axis along which to compute the softmax. Default is 0.
 
+    /// Creates a new softmax node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, axis: usize) !*Softmax {
         const ptr = try allocator.create(Softmax);
         ptr.allocator = allocator;
@@ -118,6 +119,7 @@ pub const Softmax = struct {
         std.debug.print("Softmax-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
+    /// Returns this softmax node as a generic Node interface.
     pub fn node(self: *Softmax) Node {
         return Node.init(self);
     }
