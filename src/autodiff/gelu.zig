@@ -35,7 +35,6 @@ pub const GELU = struct {
     pub fn deinit(self: *GELU) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -72,6 +71,7 @@ pub const GELU = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             const tanhPart = math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv));

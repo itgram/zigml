@@ -34,7 +34,6 @@ pub const Divide = struct {
     pub fn deinit(self: *Divide) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -74,7 +73,9 @@ pub const Divide = struct {
         const y = self.y.eval();
 
         const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad_x.deinit();
         const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad_y.deinit();
 
         for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
             gx.* = dv / yv;

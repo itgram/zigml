@@ -33,7 +33,6 @@ pub const Log = struct {
     pub fn deinit(self: *Log) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -70,6 +69,7 @@ pub const Log = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = dv / (xv * math.ln10);

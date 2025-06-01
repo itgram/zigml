@@ -36,7 +36,6 @@ pub const SELU = struct {
     pub fn deinit(self: *SELU) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -75,6 +74,7 @@ pub const SELU = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, self.value.?.data, dval.data) |*v, xv, vv, dv| {
             v.* = if (xv > 0) dv * self.lambda else dv * (vv + self.lambda * self.alpha);

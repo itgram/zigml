@@ -34,7 +34,6 @@ pub const Swish = struct {
     pub fn deinit(self: *Swish) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -73,6 +72,7 @@ pub const Swish = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             const sig = 1 / (1 + std.math.exp(-v));

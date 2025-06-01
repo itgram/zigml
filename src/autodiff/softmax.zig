@@ -33,7 +33,6 @@ pub const Softmax = struct {
     pub fn deinit(self: *Softmax) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -96,6 +95,8 @@ pub const Softmax = struct {
     /// - S is the softmax output.
     pub fn diff(self: *Softmax, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
+
         const shape = dval.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
@@ -125,6 +126,7 @@ pub const Softmax = struct {
                 }
             }
         }
+
         self.x.diff(grad);
         std.debug.print("Softmax-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }

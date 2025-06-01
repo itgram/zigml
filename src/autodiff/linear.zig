@@ -35,7 +35,6 @@ pub const Linear = struct {
     pub fn deinit(self: *Linear) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }

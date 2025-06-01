@@ -34,7 +34,6 @@ pub const LeakyReLU = struct {
     pub fn deinit(self: *LeakyReLU) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -71,6 +70,7 @@ pub const LeakyReLU = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = if (xv > 0) dv else dv * self.alpha;

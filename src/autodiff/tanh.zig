@@ -34,7 +34,6 @@ pub const Tanh = struct {
     pub fn deinit(self: *Tanh) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -70,6 +69,7 @@ pub const Tanh = struct {
     /// The gradient of the hyperbolic tangent function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Tanh, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * (1 - vv * vv);

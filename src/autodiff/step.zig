@@ -33,7 +33,6 @@ pub const Step = struct {
     pub fn deinit(self: *Step) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -70,6 +69,7 @@ pub const Step = struct {
     /// The gradient of the step function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Step, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data) |*v| {
             v.* = 0;

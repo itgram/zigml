@@ -40,7 +40,6 @@ pub const PReLU = struct {
     pub fn deinit(self: *PReLU) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -80,6 +79,7 @@ pub const PReLU = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, self.grad.data, x.data, dval.data) |*v, *ag, xv, dv| {
             v.* = if (xv > 0) dv else dv * self.alpha;

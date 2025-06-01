@@ -33,7 +33,6 @@ pub const Subtract = struct {
     pub fn deinit(self: *Subtract) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -70,7 +69,9 @@ pub const Subtract = struct {
     /// The gradient of the subtract function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Subtract, dval: *Tensor) void {
         const grad_x = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad_x.deinit();
         const grad_y = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad_y.deinit();
 
         for (grad_x.data, grad_y.data, dval.data) |*gx, *gy, dv| {
             gx.* = dv;

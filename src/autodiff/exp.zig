@@ -32,7 +32,6 @@ pub const Exp = struct {
     pub fn deinit(self: *Exp) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -67,6 +66,7 @@ pub const Exp = struct {
     /// The gradient of the exponential function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Exp, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * vv;

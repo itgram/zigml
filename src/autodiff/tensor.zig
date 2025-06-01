@@ -26,7 +26,9 @@ pub const Tensor = struct {
     }
 
     pub fn deinit(self: *Tensor) void {
+        self.allocator.free(self.strides);
         self.allocator.free(self.data);
+        self.allocator.destroy(self);
     }
 
     pub fn zero(self: *Tensor) void {

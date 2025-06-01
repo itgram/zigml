@@ -31,7 +31,6 @@ pub const Sigmoid = struct {
     pub fn deinit(self: *Sigmoid) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -68,6 +67,7 @@ pub const Sigmoid = struct {
     /// The gradient of the Sigmoid function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Sigmoid, dval: *Tensor) void {
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, self.value.?.data, dval.data) |*v, vv, dv| {
             v.* = dv * vv * (1 - vv); // Derivative of sigmoid: σ'(x) = σ(x) * (1 - σ(x))

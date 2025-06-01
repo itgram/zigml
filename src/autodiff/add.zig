@@ -34,7 +34,6 @@ pub const Add = struct {
     pub fn deinit(self: *Add) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }

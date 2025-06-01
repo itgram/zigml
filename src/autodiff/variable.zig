@@ -20,6 +20,7 @@ const Tensor = @import("tensor.zig").Tensor;
 /// The Variable node can be used in conjunction with other nodes like Sigmoid, Cos, Sin, etc.
 /// The Variable node is a fundamental building block in machine learning frameworks.
 pub const Variable = struct {
+    allocator: std.mem.Allocator,
     name: []const u8,
     value: *Tensor,
     grad: *Tensor,
@@ -27,6 +28,7 @@ pub const Variable = struct {
     /// Creates a new variable node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) !*Variable {
         const ptr = try allocator.create(Variable);
+        ptr.allocator = allocator;
         ptr.name = name;
         ptr.value = value;
         ptr.grad = try Tensor.init(allocator, value.shape);
@@ -38,7 +40,6 @@ pub const Variable = struct {
     /// Deinitializes the node and frees all allocated resources.
     /// This should be called when the node is no longer needed.
     pub fn deinit(self: *Variable) void {
-        self.value.deinit();
         self.grad.deinit();
         self.allocator.destroy(self);
     }

@@ -33,7 +33,6 @@ pub const Sin = struct {
     pub fn deinit(self: *Sin) void {
         if (self.value) |v| {
             v.deinit();
-            self.allocator.destroy(v);
         }
         self.allocator.destroy(self);
     }
@@ -71,6 +70,7 @@ pub const Sin = struct {
         const x = self.x.eval();
 
         const grad = Tensor.init(self.allocator, dval.shape) catch unreachable;
+        defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
             v.* = dv * math.cos(xv);

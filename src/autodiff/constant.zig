@@ -10,11 +10,13 @@ const Tensor = @import("tensor.zig").Tensor;
 /// It is a leaf node in the computation graph, meaning it does not have any dependencies on other nodes.
 /// The Constant node is useful for representing fixed values that are used in computations,
 pub const Constant = struct {
+    allocator: std.mem.Allocator,
     value: *Tensor,
 
     /// Creates a new constant node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, value: *Tensor) !*Constant {
         const ptr = try allocator.create(Constant);
+        ptr.allocator = allocator;
         ptr.value = value;
 
         return ptr;
