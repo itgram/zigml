@@ -4,6 +4,8 @@ const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
 const Graph = @import("graph.zig").Graph;
 
+const epsilon = 1e-7; // Small value to prevent log(0), matching PyTorch's implementation
+
 /// Ln function node.
 /// The natural logarithm function, which is the logarithm to the base e.
 /// It is defined as the inverse of the exponential function.
@@ -53,7 +55,7 @@ pub const Ln = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = @log(xv);
+            v.* = @log(xv + epsilon);
         }
 
         std.debug.print("Ln-eval: value: {?}\n", .{self.value});
@@ -73,7 +75,7 @@ pub const Ln = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            v.* = dv / xv;
+            v.* = dv / (xv + epsilon);
         }
 
         try self.x.diff(grad);
@@ -121,12 +123,12 @@ test "ln basic" {
     const result = try ln_op.eval();
 
     // Expected values for each input:
-    // f(x) = ln(x)
+    // f(x) = ln(x + epsilon)
     const expected = [_]f64{
-        @as(f64, @log(0.1)), // ln(0.1)
-        @as(f64, @log(0.5)), // ln(0.5)
-        @as(f64, @log(1.0)), // ln(1.0)
-        @as(f64, @log(2.0)), // ln(2.0)
+        @as(f64, @log(0.1 + 1e-7)), // ln(0.1 + 1e-7)
+        @as(f64, @log(0.5 + 1e-7)), // ln(0.5 + 1e-7)
+        @as(f64, @log(1.0 + 1e-7)), // ln(1.0 + 1e-7)
+        @as(f64, @log(2.0 + 1e-7)), // ln(2.0 + 1e-7)
     };
 
     for (result.data, expected) |actual, exp| {
@@ -169,12 +171,12 @@ test "ln gradient" {
     try ln_op.diff(gradTensor);
 
     // Expected gradients for each input:
-    // ∂f/∂x = 1/x
+    // ∂f/∂x = 1/(x + epsilon)
     const expected_grad = [_]f64{
-        1.0 / 0.1, // ln'(0.1)
-        1.0 / 0.5, // ln'(0.5)
-        1.0 / 1.0, // ln'(1.0)
-        1.0 / 2.0, // ln'(2.0)
+        1.0 / (0.1 + 1e-7), // ln'(0.1 + 1e-7)
+        1.0 / (0.5 + 1e-7), // ln'(0.5 + 1e-7)
+        1.0 / (1.0 + 1e-7), // ln'(1.0 + 1e-7)
+        1.0 / (2.0 + 1e-7), // ln'(2.0 + 1e-7)
     };
 
     for (x.grad.data, expected_grad) |actual, exp| {
@@ -208,12 +210,12 @@ test "ln with multiple shapes" {
         const result = try ln_op.eval();
 
         // Expected values for each input:
-        // f(x) = ln(x)
+        // f(x) = ln(x + epsilon)
         const expected = [_]f64{
-            @as(f64, @log(0.1)), // ln(0.1)
-            @as(f64, @log(0.5)), // ln(0.5)
-            @as(f64, @log(1.0)), // ln(1.0)
-            @as(f64, @log(2.0)), // ln(2.0)
+            @as(f64, @log(0.1 + 1e-7)), // ln(0.1 + 1e-7)
+            @as(f64, @log(0.5 + 1e-7)), // ln(0.5 + 1e-7)
+            @as(f64, @log(1.0 + 1e-7)), // ln(1.0 + 1e-7)
+            @as(f64, @log(2.0 + 1e-7)), // ln(2.0 + 1e-7)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -231,12 +233,12 @@ test "ln with multiple shapes" {
         try ln_op.diff(gradTensor);
 
         // Expected gradients for each position:
-        // ∂f/∂x = 1/x
+        // ∂f/∂x = 1/(x + epsilon)
         const expected_grad = [_]f64{
-            1.0 / 0.1, // ln'(0.1)
-            1.0 / 0.5, // ln'(0.5)
-            1.0 / 1.0, // ln'(1.0)
-            1.0 / 2.0, // ln'(2.0)
+            1.0 / (0.1 + 1e-7), // ln'(0.1 + 1e-7)
+            1.0 / (0.5 + 1e-7), // ln'(0.5 + 1e-7)
+            1.0 / (1.0 + 1e-7), // ln'(1.0 + 1e-7)
+            1.0 / (2.0 + 1e-7), // ln'(2.0 + 1e-7)
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -270,16 +272,16 @@ test "ln with multiple shapes" {
         const result = try ln_op.eval();
 
         // Expected values for each input:
-        // f(x) = ln(x)
+        // f(x) = ln(x + epsilon)
         const expected = [_]f64{
-            @as(f64, @log(0.1)), // ln(0.1)
-            @as(f64, @log(0.5)), // ln(0.5)
-            @as(f64, @log(1.0)), // ln(1.0)
-            @as(f64, @log(2.0)), // ln(2.0)
-            @as(f64, @log(0.2)), // ln(0.2)
-            @as(f64, @log(0.8)), // ln(0.8)
-            @as(f64, @log(1.5)), // ln(1.5)
-            @as(f64, @log(3.0)), // ln(3.0)
+            @as(f64, @log(0.1 + 1e-7)), // ln(0.1 + 1e-7)
+            @as(f64, @log(0.5 + 1e-7)), // ln(0.5 + 1e-7)
+            @as(f64, @log(1.0 + 1e-7)), // ln(1.0 + 1e-7)
+            @as(f64, @log(2.0 + 1e-7)), // ln(2.0 + 1e-7)
+            @as(f64, @log(0.2 + 1e-7)), // ln(0.2 + 1e-7)
+            @as(f64, @log(0.8 + 1e-7)), // ln(0.8 + 1e-7)
+            @as(f64, @log(1.5 + 1e-7)), // ln(1.5 + 1e-7)
+            @as(f64, @log(3.0 + 1e-7)), // ln(3.0 + 1e-7)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -296,16 +298,16 @@ test "ln with multiple shapes" {
         try ln_op.diff(gradTensor);
 
         // Expected gradients for each position:
-        // ∂f/∂x = 1/x
+        // ∂f/∂x = 1/(x + epsilon)
         const expected_grad = [_]f64{
-            1.0 / 0.1, // ln'(0.1)
-            1.0 / 0.5, // ln'(0.5)
-            1.0 / 1.0, // ln'(1.0)
-            1.0 / 2.0, // ln'(2.0)
-            1.0 / 0.2, // ln'(0.2)
-            1.0 / 0.8, // ln'(0.8)
-            1.0 / 1.5, // ln'(1.5)
-            1.0 / 3.0, // ln'(3.0)
+            1.0 / (0.1 + 1e-7), // ln'(0.1 + 1e-7)
+            1.0 / (0.5 + 1e-7), // ln'(0.5 + 1e-7)
+            1.0 / (1.0 + 1e-7), // ln'(1.0 + 1e-7)
+            1.0 / (2.0 + 1e-7), // ln'(2.0 + 1e-7)
+            1.0 / (0.2 + 1e-7), // ln'(0.2 + 1e-7)
+            1.0 / (0.8 + 1e-7), // ln'(0.8 + 1e-7)
+            1.0 / (1.5 + 1e-7), // ln'(1.5 + 1e-7)
+            1.0 / (3.0 + 1e-7), // ln'(3.0 + 1e-7)
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -338,12 +340,12 @@ test "ln reset" {
     const result1 = try ln_op.eval();
 
     // Expected values for each input:
-    // f(x) = ln(x)
+    // f(x) = ln(x + epsilon)
     const expected1 = [_]f64{
-        @as(f64, @log(0.1)), // ln(0.1)
-        @as(f64, @log(0.5)), // ln(0.5)
-        @as(f64, @log(1.0)), // ln(1.0)
-        @as(f64, @log(2.0)), // ln(2.0)
+        @as(f64, @log(0.1 + 1e-7)), // ln(0.1 + 1e-7)
+        @as(f64, @log(0.5 + 1e-7)), // ln(0.5 + 1e-7)
+        @as(f64, @log(1.0 + 1e-7)), // ln(1.0 + 1e-7)
+        @as(f64, @log(2.0 + 1e-7)), // ln(2.0 + 1e-7)
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -356,10 +358,10 @@ test "ln reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        @as(f64, @log(0.1)), // ln(0.1)
-        @as(f64, @log(0.5)), // ln(0.5)
-        @as(f64, @log(1.0)), // ln(1.0)
-        @as(f64, @log(2.0)), // ln(2.0)
+        @as(f64, @log(0.1 + 1e-7)), // ln(0.1 + 1e-7)
+        @as(f64, @log(0.5 + 1e-7)), // ln(0.5 + 1e-7)
+        @as(f64, @log(1.0 + 1e-7)), // ln(1.0 + 1e-7)
+        @as(f64, @log(2.0 + 1e-7)), // ln(2.0 + 1e-7)
     };
 
     for (result2.data, expected2) |actual, exp| {

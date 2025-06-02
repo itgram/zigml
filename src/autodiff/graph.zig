@@ -1,6 +1,8 @@
 const std = @import("std");
 
 pub const Add = @import("add.zig").Add;
+pub const BCE = @import("bce.zig").BCE;
+pub const CCE = @import("cce.zig").CCE;
 pub const Constant = @import("constant.zig").Constant;
 pub const Cos = @import("cos.zig").Cos;
 pub const Divide = @import("divide.zig").Divide;
@@ -45,6 +47,16 @@ pub const Graph = struct {
     /// Create an addition node
     pub fn add(self: *Graph, x: Node, y: Node) !*Add {
         return try Add.init(self.allocator, x, y);
+    }
+
+    /// Create a binary cross-entropy loss node
+    pub fn bce(self: *Graph, predictions: Node, targets: Node) !*BCE {
+        return try BCE.init(self.allocator, predictions, targets);
+    }
+
+    /// Create a categorical cross-entropy loss node
+    pub fn cce(self: *Graph, predictions: Node, targets: Node) !*CCE {
+        return try CCE.init(self.allocator, predictions, targets);
     }
 
     /// Create a constant node
@@ -186,6 +198,8 @@ pub const Graph = struct {
 // Include all test files
 test {
     _ = @import("add.zig");
+    _ = @import("bce.zig");
+    _ = @import("cce.zig");
     _ = @import("constant.zig");
     _ = @import("cos.zig");
     _ = @import("divide.zig");
