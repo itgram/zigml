@@ -23,6 +23,7 @@ pub const ReLU = @import("relu.zig").ReLU;
 pub const SELU = @import("selu.zig").SELU;
 pub const Sigmoid = @import("sigmoid.zig").Sigmoid;
 pub const Sin = @import("sin.zig").Sin;
+pub const SoftmaxCCE = @import("softmax_cce.zig").SoftmaxCCE;
 pub const Softmax = @import("softmax.zig").Softmax;
 pub const Step = @import("step.zig").Step;
 pub const Subtract = @import("subtract.zig").Subtract;
@@ -154,6 +155,11 @@ pub const Graph = struct {
         return try Sin.init(self.allocator, x);
     }
 
+    /// Create a softmax_cce node
+    pub fn softmax_cce(self: *Graph, x: Node, y: Node, axis: usize) !*SoftmaxCCE {
+        return try SoftmaxCCE.init(self.allocator, x, y, axis);
+    }
+
     /// Create a softmax node
     pub fn softmax(self: *Graph, x: Node, axis: usize) !*Softmax {
         return try Softmax.init(self.allocator, x, axis);
@@ -221,6 +227,7 @@ test {
     _ = @import("selu.zig");
     _ = @import("sigmoid.zig");
     _ = @import("sin.zig");
+    _ = @import("softmax_cce.zig");
     _ = @import("softmax.zig");
     _ = @import("step.zig");
     _ = @import("subtract.zig");
