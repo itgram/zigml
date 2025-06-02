@@ -11,6 +11,8 @@ pub const LeakyReLU = @import("leaky_relu.zig").LeakyReLU;
 pub const Linear = @import("linear.zig").Linear;
 pub const Ln = @import("ln.zig").Ln;
 pub const Log = @import("log.zig").Log;
+pub const MAE = @import("mae.zig").MAE;
+pub const MSE = @import("mse.zig").MSE;
 pub const Multiply = @import("multiply.zig").Multiply;
 pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
@@ -93,6 +95,16 @@ pub const Graph = struct {
     /// Create a logarithm node
     pub fn log(self: *Graph, x: Node) !*Log {
         return try Log.init(self.allocator, x);
+    }
+
+    /// Create a mean absolute error node
+    pub fn mae(self: *Graph, predictions: Node, targets: Node) !*MAE {
+        return try MAE.init(self.allocator, predictions, targets);
+    }
+
+    /// Create a mean squared error node
+    pub fn mse(self: *Graph, predictions: Node, targets: Node) !*MSE {
+        return try MSE.init(self.allocator, predictions, targets);
     }
 
     /// Create a multiplication node
@@ -185,6 +197,8 @@ test {
     _ = @import("linear.zig");
     _ = @import("ln.zig");
     _ = @import("log.zig");
+    _ = @import("mae.zig");
+    _ = @import("mse.zig");
     _ = @import("multiply.zig");
     _ = @import("node.zig");
     _ = @import("power.zig");

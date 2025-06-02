@@ -1,5 +1,11 @@
 const std = @import("std");
 
+/// Error types for the Tensor structure.
+const TensorError = error{
+    /// Error when the shape of the tensor does not match the expected shape.
+    ShapeMismatch,
+};
+
 /// Tensor structure for representing multi-dimensional arrays.
 /// The Tensor structure is often used in machine learning and scientific computing.
 /// It is defined as:
