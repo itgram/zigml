@@ -19,12 +19,14 @@ pub const MAE = struct {
 
     /// Creates a new MAE node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*MAE {
-        const ptr = try allocator.create(MAE);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
-        return ptr;
+        const self = try allocator.create(MAE);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

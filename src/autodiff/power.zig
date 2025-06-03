@@ -22,13 +22,15 @@ pub const Power = struct {
 
     /// Creates a new power node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Power {
-        const ptr = try allocator.create(Power);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
+        const self = try allocator.create(Power);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

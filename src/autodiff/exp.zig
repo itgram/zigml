@@ -20,12 +20,14 @@ pub const Exp = struct {
 
     /// Creates a new exponential node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Exp {
-        const ptr = try allocator.create(Exp);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(Exp);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

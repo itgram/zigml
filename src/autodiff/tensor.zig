@@ -21,14 +21,16 @@ pub const Tensor = struct {
     data: []f64,
 
     pub fn init(allocator: std.mem.Allocator, shape: []const usize) !*Tensor {
-        const ptr = try allocator.create(Tensor);
-        ptr.allocator = allocator;
-        ptr.shape = shape;
-        ptr.strides = try computeStrides(allocator, shape);
-        ptr.size = numel(shape);
-        ptr.data = try allocator.alloc(f64, ptr.size);
+        const self = try allocator.create(Tensor);
+        self.* = .{
+            .allocator = allocator,
+            .shape = shape,
+            .strides = try computeStrides(allocator, shape),
+            .size = numel(shape),
+            .data = try allocator.alloc(f64, self.size),
+        };
 
-        return ptr;
+        return self;
     }
 
     pub fn deinit(self: *Tensor) void {

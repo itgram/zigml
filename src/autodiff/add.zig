@@ -21,13 +21,15 @@ pub const Add = struct {
 
     /// Creates a new addition node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Add {
-        const ptr = try allocator.create(Add);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
+        const self = try allocator.create(Add);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

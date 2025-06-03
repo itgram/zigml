@@ -28,14 +28,16 @@ pub const Variable = struct {
 
     /// Creates a new variable node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) !*Variable {
-        const ptr = try allocator.create(Variable);
-        ptr.allocator = allocator;
-        ptr.name = name;
-        ptr.value = value;
-        ptr.grad = try Tensor.init(allocator, value.shape);
-        ptr.grad.zero();
+        const self = try allocator.create(Variable);
+        self.* = .{
+            .allocator = allocator,
+            .name = name,
+            .value = value,
+            .grad = try Tensor.init(allocator, value.shape),
+        };
+        self.grad.zero();
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

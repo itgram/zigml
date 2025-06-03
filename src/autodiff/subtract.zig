@@ -20,13 +20,15 @@ pub const Subtract = struct {
 
     /// Creates a new subtraction node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Subtract {
-        const ptr = try allocator.create(Subtract);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
+        const self = try allocator.create(Subtract);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

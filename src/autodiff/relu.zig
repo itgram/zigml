@@ -20,12 +20,13 @@ pub const ReLU = struct {
 
     /// Creates a new ReLU node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*ReLU {
-        const ptr = try allocator.create(ReLU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-
-        return ptr;
+        const self = try allocator.create(ReLU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

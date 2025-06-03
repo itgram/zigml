@@ -23,12 +23,14 @@ pub const GELU = struct {
 
     /// Creates a new GELU node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*GELU {
-        const ptr = try allocator.create(GELU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(GELU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

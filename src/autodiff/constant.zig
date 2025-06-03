@@ -16,11 +16,13 @@ pub const Constant = struct {
 
     /// Creates a new constant node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, value: *Tensor) !*Constant {
-        const ptr = try allocator.create(Constant);
-        ptr.allocator = allocator;
-        ptr.value = value;
+        const self = try allocator.create(Constant);
+        self.* = .{
+            .allocator = allocator,
+            .value = value,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

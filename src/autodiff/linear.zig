@@ -23,12 +23,14 @@ pub const Linear = struct {
 
     /// Creates a new linear node with the given input, weight, and bias nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Linear {
-        const ptr = try allocator.create(Linear);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(Linear);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

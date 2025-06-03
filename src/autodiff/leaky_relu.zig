@@ -21,13 +21,15 @@ pub const LeakyReLU = struct {
 
     /// Creates a new LeakyReLU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*LeakyReLU {
-        const ptr = try allocator.create(LeakyReLU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.alpha = alpha;
+        const self = try allocator.create(LeakyReLU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .alpha = alpha,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

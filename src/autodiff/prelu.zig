@@ -30,16 +30,18 @@ pub const PReLU = struct {
             return error.ShapeMismatch;
         }
 
-        const ptr = try allocator.create(PReLU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.grad = try Tensor.init(allocator, alpha.shape);
-        ptr.x = x;
-        ptr.alpha = alpha;
+        const self = try allocator.create(PReLU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .grad = try Tensor.init(allocator, alpha.shape),
+            .x = x,
+            .alpha = alpha,
+        };
 
-        ptr.grad.zero();
+        self.grad.zero();
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

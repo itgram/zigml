@@ -23,12 +23,14 @@ pub const Ln = struct {
 
     /// Creates a new natural logarithm node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Ln {
-        const ptr = try allocator.create(Ln);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(Ln);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

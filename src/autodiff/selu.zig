@@ -22,14 +22,16 @@ pub const SELU = struct {
 
     /// Creates a new SELU node with the given input node and optional alpha and lambda values.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64, lambda: f64) !*SELU {
-        const ptr = try allocator.create(SELU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.alpha = alpha;
-        ptr.lambda = lambda;
+        const self = try allocator.create(SELU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .alpha = alpha,
+            .lambda = lambda,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

@@ -23,10 +23,11 @@ pub const Tanh = struct {
     /// Creates a new tanh node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Tanh {
         const ptr = try allocator.create(Tanh);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-
+        ptr.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
         return ptr;
     }
 

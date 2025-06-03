@@ -19,12 +19,13 @@ pub const Sigmoid = struct {
 
     /// Creates a new sigmoid node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Sigmoid {
-        const ptr = try allocator.create(Sigmoid);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-
-        return ptr;
+        const self = try allocator.create(Sigmoid);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

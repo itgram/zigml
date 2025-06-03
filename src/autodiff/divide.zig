@@ -21,13 +21,15 @@ pub const Divide = struct {
 
     /// Creates a new division node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Divide {
-        const ptr = try allocator.create(Divide);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
+        const self = try allocator.create(Divide);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

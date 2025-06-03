@@ -20,13 +20,15 @@ pub const Step = struct {
 
     /// Creates a new step node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, threshold: f64) !*Step {
-        const ptr = try allocator.create(Step);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.threshold = threshold;
+        const self = try allocator.create(Step);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .threshold = threshold,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

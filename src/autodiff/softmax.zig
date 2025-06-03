@@ -20,13 +20,15 @@ pub const Softmax = struct {
 
     /// Creates a new softmax node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, axis: usize) !*Softmax {
-        const ptr = try allocator.create(Softmax);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.axis = axis;
+        const self = try allocator.create(Softmax);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .axis = axis,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

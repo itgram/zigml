@@ -19,12 +19,14 @@ pub const MSE = struct {
 
     /// Creates a new MSE node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*MSE {
-        const ptr = try allocator.create(MSE);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
-        return ptr;
+        const self = try allocator.create(MSE);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

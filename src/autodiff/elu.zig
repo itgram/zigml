@@ -21,13 +21,15 @@ pub const ELU = struct {
 
     /// Creates a new ELU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*ELU {
-        const ptr = try allocator.create(ELU);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.alpha = alpha;
+        const self = try allocator.create(ELU);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .alpha = alpha,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

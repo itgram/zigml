@@ -21,12 +21,14 @@ pub const Tan = struct {
 
     /// Creates a new tangent node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Tan {
-        const ptr = try allocator.create(Tan);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(Tan);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

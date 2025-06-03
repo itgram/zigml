@@ -22,12 +22,14 @@ pub const Swish = struct {
 
     /// Creates a new Swish node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node) !*Swish {
-        const ptr = try allocator.create(Swish);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
+        const self = try allocator.create(Swish);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+        };
 
-        return ptr;
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

@@ -19,13 +19,15 @@ pub const SoftmaxCCE = struct {
 
     /// Creates a new SoftmaxCCE node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node, axis: usize) !*SoftmaxCCE {
-        const ptr = try allocator.create(SoftmaxCCE);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
-        ptr.axis = axis;
-        return ptr;
+        const self = try allocator.create(SoftmaxCCE);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+            .axis = axis,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

@@ -21,12 +21,14 @@ pub const BCE = struct {
 
     /// Creates a new BCE node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*BCE {
-        const ptr = try allocator.create(BCE);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
-        return ptr;
+        const self = try allocator.create(BCE);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.

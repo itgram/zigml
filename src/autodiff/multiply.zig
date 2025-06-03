@@ -21,13 +21,14 @@ pub const Multiply = struct {
 
     /// Creates a new multiplication node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node) !*Multiply {
-        const ptr = try allocator.create(Multiply);
-        ptr.allocator = allocator;
-        ptr.value = null;
-        ptr.x = x;
-        ptr.y = y;
-
-        return ptr;
+        const self = try allocator.create(Multiply);
+        self.* = .{
+            .allocator = allocator,
+            .value = null,
+            .x = x,
+            .y = y,
+        };
+        return self;
     }
 
     /// Deinitializes the node and frees all allocated resources.
