@@ -15,6 +15,21 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    // Create the autodiff module
+    const autodiff_mod = b.createModule(.{
+        .root_source_file = b.path("src/autodiff/graph.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    // Create the nn module
+    const nn_mod = b.createModule(.{
+        .root_source_file = b.path("src/nn/metrics.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    nn_mod.addImport("autodiff", autodiff_mod);
+
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
     // Every executable or library we compile will be based on one or more modules.
@@ -28,6 +43,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Add autodiff as a dependency to the library module
+    lib_mod.addImport("autodiff", autodiff_mod);
+    lib_mod.addImport("nn", nn_mod);
+
     // We will also create a module for our other entry point, 'main.zig'.
     const exe_mod = b.createModule(.{
         // `root_source_file` is the Zig "entry point" of the module. If a module
@@ -39,10 +58,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // Modules can depend on one another using the `std.Build.Module.addImport` function.
-    // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
-    // file path. In this case, we set up `exe_mod` to import `lib_mod`.
+    // Add dependencies to the executable module
     exe_mod.addImport("zigml_lib", lib_mod);
+    exe_mod.addImport("autodiff", autodiff_mod);
+    exe_mod.addImport("nn", nn_mod);
 
     // Now, we will create a static library based on the module we created above.
     // This creates a `std.Build.Step.Compile`, which is the build step responsible
@@ -98,14 +117,33 @@ pub fn build(b: *std.Build) void {
     const lib_unit_tests = b.addTest(.{
         .root_module = lib_mod,
     });
+    lib_unit_tests.root_module.addImport("autodiff", autodiff_mod);
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const exe_unit_tests = b.addTest(.{
         .root_module = exe_mod,
     });
+    exe_unit_tests.root_module.addImport("autodiff", autodiff_mod);
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
+
+    // Add test for autodiff.zig
+    const autodiff_test = b.addTest(.{
+        .root_source_file = b.path("src/autodiff/graph.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_autodiff_test = b.addRunArtifact(autodiff_test);
+
+    // Add test for metrics.zig
+    const metrics_test = b.addTest(.{
+        .root_source_file = b.path("src/nn/metrics.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    metrics_test.root_module.addImport("autodiff", autodiff_mod);
+    const run_metrics_test = b.addRunArtifact(metrics_test);
 
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request
@@ -113,4 +151,6 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_exe_unit_tests.step);
+    test_step.dependOn(&run_autodiff_test.step);
+    test_step.dependOn(&run_metrics_test.step);
 }
