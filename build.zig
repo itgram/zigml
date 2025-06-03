@@ -145,6 +145,14 @@ pub fn build(b: *std.Build) void {
     metrics_test.root_module.addImport("autodiff", autodiff_mod);
     const run_metrics_test = b.addRunArtifact(metrics_test);
 
+    const optimize_test = b.addTest(.{
+        .root_source_file = b.path("src/nn/optimizers.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    optimize_test.root_module.addImport("autodiff", autodiff_mod);
+    const run_optimize_test = b.addRunArtifact(optimize_test);
+
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request
     // running the unit tests.
@@ -153,4 +161,5 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_exe_unit_tests.step);
     test_step.dependOn(&run_autodiff_test.step);
     test_step.dependOn(&run_metrics_test.step);
+    test_step.dependOn(&run_optimize_test.step);
 }
