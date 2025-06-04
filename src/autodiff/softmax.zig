@@ -86,7 +86,6 @@ pub const Softmax = struct {
             }
         }
 
-        std.debug.print("Softmax-eval: value: {?}\n", .{self.value});
         return self.value.?;
     }
 
@@ -132,7 +131,6 @@ pub const Softmax = struct {
         }
 
         try self.x.diff(grad);
-        std.debug.print("Softmax-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

@@ -59,8 +59,6 @@ pub const Multiply = struct {
             v.* = xv * yv;
         }
 
-        std.debug.print("Multiply-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -86,8 +84,6 @@ pub const Multiply = struct {
 
         try self.x.diff(grad_x);
         try self.y.diff(grad_y);
-
-        std.debug.print("Multiply-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

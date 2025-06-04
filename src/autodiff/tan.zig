@@ -59,8 +59,6 @@ pub const Tan = struct {
             v.* = math.tan(xv);
         }
 
-        std.debug.print("Tan-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -81,8 +79,6 @@ pub const Tan = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Tan-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

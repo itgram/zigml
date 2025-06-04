@@ -62,8 +62,6 @@ pub const SELU = struct {
             v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (math.exp(xv) - 1);
         }
 
-        std.debug.print("SELU-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -84,8 +82,6 @@ pub const SELU = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("SELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

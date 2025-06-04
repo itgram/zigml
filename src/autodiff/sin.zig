@@ -59,8 +59,6 @@ pub const Sin = struct {
             v.* = math.sin(xv);
         }
 
-        std.debug.print("Sin-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -80,8 +78,6 @@ pub const Sin = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Sin-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

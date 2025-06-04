@@ -59,8 +59,6 @@ pub const Cos = struct {
             v.* = math.cos(xv);
         }
 
-        std.debug.print("Cos-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -80,8 +78,6 @@ pub const Cos = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Cos-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

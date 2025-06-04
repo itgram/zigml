@@ -60,8 +60,6 @@ pub const Divide = struct {
             v.* = xv / yv;
         }
 
-        std.debug.print("Divide-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -87,8 +85,6 @@ pub const Divide = struct {
 
         try self.x.diff(grad_x);
         try self.y.diff(grad_y);
-
-        std.debug.print("Divide-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

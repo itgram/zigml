@@ -56,8 +56,6 @@ pub const ReLU = struct {
             v.* = if (xv > 0) xv else 0;
         }
 
-        std.debug.print("ReLU-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -77,8 +75,6 @@ pub const ReLU = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("ReLU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

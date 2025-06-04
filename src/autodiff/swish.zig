@@ -61,8 +61,6 @@ pub const Swish = struct {
             v.* = xv / (1 + math.exp(-xv));
         }
 
-        std.debug.print("Swish-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -83,8 +81,6 @@ pub const Swish = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Swish-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Returns this Swish node as a generic Node interface.

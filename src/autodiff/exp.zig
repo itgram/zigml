@@ -57,8 +57,6 @@ pub const Exp = struct {
             v.* = math.exp(xv);
         }
 
-        std.debug.print("Exp-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -76,8 +74,6 @@ pub const Exp = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Exp-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

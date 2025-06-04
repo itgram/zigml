@@ -60,8 +60,6 @@ pub const GELU = struct {
             v.* = 0.5 * xv * (1 + math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv)));
         }
 
-        std.debug.print("GELU-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -84,8 +82,6 @@ pub const GELU = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("GELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

@@ -11,59 +11,21 @@ const OptimizerError = error{
     ShapeMismatch,
 };
 
-/// Optimizer types
-pub const OptimizerType = enum {
-    sgd,
-    adagrad,
-    rmsprop,
-    adam,
-};
+/// Generic optimizer interface
+pub fn GenericOptimizer(
+    comptime Context: type,
+    comptime stepFn: fn (context: Context, params: *Tensor, grads: *Tensor) OptimizerError!void,
+) type {
+    return struct {
+        context: Context,
 
-/// Optimizer interface using tagged union
-pub const Optimizer = union(OptimizerType) {
-    sgd: *SGD,
-    adagrad: *AdaGrad,
-    rmsprop: *RMSprop,
-    adam: *Adam,
+        const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator, comptime T: OptimizerType, learning_rate: f64, shape: ?[]const usize) !*Optimizer {
-        const self = try allocator.create(Optimizer);
-        self.* = switch (T) {
-            .sgd => .{
-                .sgd = try SGD.init(allocator, learning_rate),
-            },
-            .adagrad => .{
-                .adagrad = try AdaGrad.init(allocator, learning_rate, shape.?),
-            },
-            .rmsprop => .{
-                .rmsprop = try RMSprop.init(allocator, learning_rate, shape.?),
-            },
-            .adam => .{
-                .adam = try Adam.init(allocator, learning_rate, shape.?),
-            },
-        };
-        return self;
-    }
-
-    pub fn deinit(self: *Optimizer, allocator: std.mem.Allocator) void {
-        switch (self.*) {
-            .sgd => |sgd| sgd.deinit(allocator),
-            .adagrad => |adagrad| adagrad.deinit(allocator),
-            .rmsprop => |rmsprop| rmsprop.deinit(allocator),
-            .adam => |adam| adam.deinit(allocator),
+        pub inline fn step(self: Self, params: *Tensor, grads: *Tensor) OptimizerError!void {
+            return stepFn(self.context, params, grads);
         }
-        allocator.destroy(self);
-    }
-
-    pub fn step(self: *Optimizer, params: *Tensor, grads: *Tensor) OptimizerError!void {
-        switch (self.*) {
-            .sgd => |sgd| try sgd.step(params, grads),
-            .adagrad => |adagrad| try adagrad.step(params, grads),
-            .rmsprop => |rmsprop| try rmsprop.step(params, grads),
-            .adam => |adam| try adam.step(params, grads),
-        }
-    }
-};
+    };
+}
 
 /// Stochastic Gradient Descent optimizer
 pub const SGD = struct {
@@ -95,6 +57,10 @@ pub const SGD = struct {
         for (params.data, grads.data) |*param, grad| {
             param.* -= self.learning_rate * grad;
         }
+    }
+
+    pub fn optimizer(self: *SGD) GenericOptimizer(*SGD, step) {
+        return .{ .context = self };
     }
 };
 
@@ -142,6 +108,10 @@ pub const AdaGrad = struct {
         for (params.data, grads.data, self.squared_grads.data) |*param, grad, s| {
             param.* -= self.learning_rate * grad / @sqrt(s + self.epsilon);
         }
+    }
+
+    pub fn optimizer(self: *AdaGrad) GenericOptimizer(*AdaGrad, step) {
+        return .{ .context = self };
     }
 };
 
@@ -191,6 +161,10 @@ pub const RMSprop = struct {
         for (params.data, grads.data, self.squared_grads.data) |*param, grad, s| {
             param.* -= self.learning_rate * grad / @sqrt(s + self.epsilon);
         }
+    }
+
+    pub fn optimizer(self: *RMSprop) GenericOptimizer(*RMSprop, step) {
+        return .{ .context = self };
     }
 };
 
@@ -259,6 +233,10 @@ pub const Adam = struct {
             param.* -= self.learning_rate * m_hat * m / (@sqrt(v_hat * v) + self.epsilon);
         }
     }
+
+    pub fn optimizer(self: *Adam) GenericOptimizer(*Adam, step) {
+        return .{ .context = self };
+    }
 };
 
 test "optimizers" {
@@ -266,8 +244,9 @@ test "optimizers" {
 
     // Test SGD
     {
-        const optimizer = try Optimizer.init(allocator, .sgd, 0.1, null);
-        defer optimizer.deinit(allocator);
+        const sgd = try SGD.init(allocator, 0.1);
+        defer sgd.deinit(allocator);
+        const optimizer = sgd.optimizer();
 
         const params = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer params.deinit();
@@ -295,8 +274,9 @@ test "optimizers" {
 
     // Test AdaGrad
     {
-        const optimizer = try Optimizer.init(allocator, .adagrad, 0.1, &[_]usize{ 2, 2 });
-        defer optimizer.deinit(allocator);
+        const adagrad = try AdaGrad.init(allocator, 0.1, &[_]usize{ 2, 2 });
+        defer adagrad.deinit(allocator);
+        const optimizer = adagrad.optimizer();
 
         const params = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer params.deinit();
@@ -325,8 +305,9 @@ test "optimizers" {
 
     // Test RMSprop
     {
-        const optimizer = try Optimizer.init(allocator, .rmsprop, 0.1, &[_]usize{ 2, 2 });
-        defer optimizer.deinit(allocator);
+        const rmsprop = try RMSprop.init(allocator, 0.1, &[_]usize{ 2, 2 });
+        defer rmsprop.deinit(allocator);
+        const optimizer = rmsprop.optimizer();
 
         const params = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer params.deinit();
@@ -355,8 +336,9 @@ test "optimizers" {
 
     // Test Adam
     {
-        const optimizer = try Optimizer.init(allocator, .adam, 0.1, &[_]usize{ 2, 2 });
-        defer optimizer.deinit(allocator);
+        const adam = try Adam.init(allocator, 0.1, &[_]usize{ 2, 2 });
+        defer adam.deinit(allocator);
+        const optimizer = adam.optimizer();
 
         const params = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer params.deinit();

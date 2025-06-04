@@ -59,8 +59,6 @@ pub const ELU = struct {
             v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1.0);
         }
 
-        std.debug.print("ELU-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -80,8 +78,6 @@ pub const ELU = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("ELU-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

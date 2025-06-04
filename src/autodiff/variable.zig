@@ -55,8 +55,6 @@ pub const Variable = struct {
     /// It is also used in optimization algorithms to update parameters during training.
     /// The variable is differentiable, allowing gradients to be computed for backpropagation.
     pub fn eval(self: *Variable) !*Tensor {
-        std.debug.print("Variable-eval: {s}, value: {}, grad: {}\n", .{ self.name, self.value, self.grad });
-
         return self.value;
     }
 
@@ -69,8 +67,6 @@ pub const Variable = struct {
         for (self.grad.data, dval.data) |*g, dv| {
             g.* += dv;
         }
-
-        std.debug.print("Variable-diff: {s}, value: {}, grad: {}, dval: {}\n", .{ self.name, self.value, self.grad, dval });
     }
 
     /// Resets the node's state by clearing accumulated gradients.

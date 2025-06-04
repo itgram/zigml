@@ -60,8 +60,6 @@ pub const MAE = struct {
         self.value = try Tensor.init(self.allocator, &[_]usize{1});
         self.value.?.data[0] = sum / @as(f64, @floatFromInt(x.size));
 
-        std.debug.print("MAE-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 

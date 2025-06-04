@@ -60,8 +60,6 @@ pub const Step = struct {
             v.* = if (xv >= self.threshold) 1.0 else 0.0;
         }
 
-        std.debug.print("Step-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -79,8 +77,6 @@ pub const Step = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Step-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

@@ -60,8 +60,6 @@ pub const Add = struct {
             v.* = xv + yv;
         }
 
-        std.debug.print("Add-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -84,8 +82,6 @@ pub const Add = struct {
 
         try self.x.diff(grad_x);
         try self.y.diff(grad_y);
-
-        std.debug.print("Add-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

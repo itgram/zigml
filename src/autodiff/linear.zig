@@ -61,8 +61,6 @@ pub const Linear = struct {
             v.* = xv;
         }
 
-        std.debug.print("Linear-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -73,8 +71,6 @@ pub const Linear = struct {
     /// The gradient of the linear function is typically used in conjunction with other nodes to build complex computation graphs.
     pub fn diff(self: *Linear, dval: *Tensor) !void {
         try self.x.diff(dval);
-
-        std.debug.print("Linear-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

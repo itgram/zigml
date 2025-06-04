@@ -74,8 +74,6 @@ pub const PReLU = struct {
             v.* = if (xv > 0) xv else alpha * xv;
         }
 
-        std.debug.print("PReLU-eval: value: {?}, alpha: {}\n", .{ self.value, self.alpha });
-
         return self.value.?;
     }
 
@@ -97,8 +95,6 @@ pub const PReLU = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("PReLU-diff: value: {?}, alpha-grad: {}, dval: {}\n", .{ self.value, self.grad, dval });
     }
 
     /// Resets the node's state by clearing cached values.

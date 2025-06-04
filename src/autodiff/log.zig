@@ -58,8 +58,6 @@ pub const Log = struct {
             v.* = math.log10(xv);
         }
 
-        std.debug.print("Log-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -79,8 +77,6 @@ pub const Log = struct {
         }
 
         try self.x.diff(grad);
-
-        std.debug.print("Log-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.

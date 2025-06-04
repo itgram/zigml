@@ -60,8 +60,6 @@ pub const Power = struct {
             v.* = math.pow(f64, xv + epsilon, yv);
         }
 
-        std.debug.print("Power-eval: value: {?}\n", .{self.value});
-
         return self.value.?;
     }
 
@@ -87,8 +85,6 @@ pub const Power = struct {
 
         try self.x.diff(grad_x);
         try self.y.diff(grad_y);
-
-        std.debug.print("Power-diff: value: {?}, dval: {}\n", .{ self.value, dval });
     }
 
     /// Resets the node's state by clearing cached values.
