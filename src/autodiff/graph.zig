@@ -14,6 +14,7 @@ pub const Linear = @import("linear.zig").Linear;
 pub const Ln = @import("ln.zig").Ln;
 pub const Log = @import("log.zig").Log;
 pub const MAE = @import("mae.zig").MAE;
+pub const MatMul = @import("matmul.zig").MatMul;
 pub const MSE = @import("mse.zig").MSE;
 pub const Multiply = @import("multiply.zig").Multiply;
 pub const Node = @import("node.zig").Node;
@@ -115,6 +116,11 @@ pub const Graph = struct {
         return try MAE.init(self.allocator, predictions, targets);
     }
 
+    /// Create a matrix multiplication node
+    pub fn matmul(self: *Graph, x: Node, y: Node) !*MatMul {
+        return try MatMul.init(self.allocator, x, y);
+    }
+
     /// Create a mean squared error node
     pub fn mse(self: *Graph, predictions: Node, targets: Node) !*MSE {
         return try MSE.init(self.allocator, predictions, targets);
@@ -180,7 +186,7 @@ pub const Graph = struct {
         return try Swish.init(self.allocator, x);
     }
 
-    /// Create a tensor with the given shape
+    /// Create a tensor
     pub fn tensor(self: *Graph, shape: []const usize) !*Tensor {
         return try Tensor.init(self.allocator, shape);
     }
@@ -195,7 +201,7 @@ pub const Graph = struct {
         return try Tanh.init(self.allocator, x);
     }
 
-    /// Create an input variable node
+    /// Create a variable node
     pub fn variable(self: *Graph, name: []const u8, value: *Tensor) !*Variable {
         return try Variable.init(self.allocator, name, value);
     }
@@ -218,6 +224,7 @@ test {
     _ = @import("ln.zig");
     _ = @import("log.zig");
     _ = @import("mae.zig");
+    _ = @import("matmul.zig");
     _ = @import("mse.zig");
     _ = @import("multiply.zig");
     _ = @import("node.zig");
