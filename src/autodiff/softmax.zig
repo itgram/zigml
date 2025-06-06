@@ -56,8 +56,8 @@ pub const Softmax = struct {
         const shape = x.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
-        const outer = Tensor.stride(shape[0..axis]);
-        const inner = Tensor.stride(shape[axis + 1 ..]);
+        const outer = Tensor.sizeOf(shape[0..axis]);
+        const inner = Tensor.sizeOf(shape[axis + 1 ..]);
 
         for (0..outer) |outer_idx| {
             for (0..inner) |inner_idx| {
@@ -103,8 +103,8 @@ pub const Softmax = struct {
         const shape = dval.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
-        const outer = Tensor.stride(shape[0..axis]);
-        const inner = Tensor.stride(shape[axis + 1 ..]);
+        const outer = Tensor.sizeOf(shape[0..axis]);
+        const inner = Tensor.sizeOf(shape[axis + 1 ..]);
 
         for (0..outer) |outer_idx| {
             for (0..inner) |inner_idx| {

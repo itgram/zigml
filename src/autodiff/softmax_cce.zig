@@ -52,8 +52,8 @@ pub const SoftmaxCCE = struct {
         const shape = x.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
-        const outer = Tensor.stride(shape[0..axis]);
-        const inner = Tensor.stride(shape[axis + 1 ..]);
+        const outer = Tensor.sizeOf(shape[0..axis]);
+        const inner = Tensor.sizeOf(shape[axis + 1 ..]);
 
         var sum: f64 = 0;
         const num_samples = x.shape[0];
@@ -108,8 +108,8 @@ pub const SoftmaxCCE = struct {
         const shape = x.shape;
         const axis = self.axis;
         const axis_dim = shape[axis];
-        const outer = Tensor.stride(shape[0..axis]);
-        const inner = Tensor.stride(shape[axis + 1 ..]);
+        const outer = Tensor.sizeOf(shape[0..axis]);
+        const inner = Tensor.sizeOf(shape[axis + 1 ..]);
         const num_samples = x.shape[0];
         const n = @as(f64, @floatFromInt(num_samples));
 
