@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 const epsilon = 1e-12; // Small value to prevent log(0), matching PyTorch's CCE implementation
 
@@ -162,12 +162,11 @@ pub const SoftmaxCCE = struct {
 
 test "softmax_cce basic evaluation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples
     // x = [[2.0, 1.0, 0.0], [0.0, 2.0, 1.0]] (logits)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 2.0;
     x_tensor.data[1] = 1.0;
@@ -176,7 +175,7 @@ test "softmax_cce basic evaluation" {
     x_tensor.data[4] = 2.0;
     x_tensor.data[5] = 1.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
@@ -185,12 +184,12 @@ test "softmax_cce basic evaluation" {
     y_tensor.data[4] = 1.0;
     y_tensor.data[5] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var softmax_cce = try graph.softmax_cce(x.node(), y.node(), 1);
+    var softmax_cce = try SoftmaxCCE.init(allocator, x.node(), y.node(), 1);
     defer softmax_cce.deinit();
 
     const result = try softmax_cce.eval();
@@ -203,12 +202,11 @@ test "softmax_cce basic evaluation" {
 
 test "softmax_cce gradient computation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples
     // x = [[2.0, 1.0, 0.0], [0.0, 2.0, 1.0]] (logits)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 2.0;
     x_tensor.data[1] = 1.0;
@@ -217,7 +215,7 @@ test "softmax_cce gradient computation" {
     x_tensor.data[4] = 2.0;
     x_tensor.data[5] = 1.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
@@ -226,12 +224,12 @@ test "softmax_cce gradient computation" {
     y_tensor.data[4] = 1.0;
     y_tensor.data[5] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var softmax_cce = try graph.softmax_cce(x.node(), y.node(), 1);
+    var softmax_cce = try SoftmaxCCE.init(allocator, x.node(), y.node(), 1);
     defer softmax_cce.deinit();
 
     // First compute the forward pass
@@ -242,7 +240,7 @@ test "softmax_cce gradient computation" {
     x.reset();
 
     // Then compute gradients
-    const df_tensor = try graph.tensor(&[_]usize{1});
+    const df_tensor = try Tensor.init(allocator, &[_]usize{1});
     defer df_tensor.deinit();
     df_tensor.data[0] = 1.0;
 
@@ -262,10 +260,9 @@ test "softmax_cce gradient computation" {
 
 test "softmax_cce shape mismatch error" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [[2.0, 1.0, 0.0], [0.0, 2.0, 1.0]], y = [[1, 0], [0, 1]] (different shapes)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 2.0;
     x_tensor.data[1] = 1.0;
@@ -274,19 +271,19 @@ test "softmax_cce shape mismatch error" {
     x_tensor.data[4] = 2.0;
     x_tensor.data[5] = 1.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
     y_tensor.data[2] = 0.0;
     y_tensor.data[3] = 1.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var softmax_cce = try graph.softmax_cce(x.node(), y.node(), 1);
+    var softmax_cce = try SoftmaxCCE.init(allocator, x.node(), y.node(), 1);
     defer softmax_cce.deinit();
 
     // Should return ShapeMismatch error

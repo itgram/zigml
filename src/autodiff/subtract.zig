@@ -1,7 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Subtract function node.
 /// The Subtract node represents the subtraction operation between two tensors.
@@ -102,10 +102,9 @@ pub const Subtract = struct {
 
 test "subtract basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -114,7 +113,7 @@ test "subtract basic" {
     xTensor.data[4] = 2.0; // positive input
     xTensor.data[5] = 3.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{6});
+    const yTensor = try Tensor.init(allocator, &[_]usize{6});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -124,13 +123,13 @@ test "subtract basic" {
     yTensor.data[5] = -2.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create subtract operation
-    var sub_op = try graph.subtract(x.node(), y.node());
+    var sub_op = try Subtract.init(allocator, x.node(), y.node());
     defer sub_op.deinit();
 
     // Evaluate forward pass
@@ -157,10 +156,9 @@ test "subtract basic" {
 
 test "subtract gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -169,7 +167,7 @@ test "subtract gradient" {
     xTensor.data[4] = 2.0; // positive input
     xTensor.data[5] = 3.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{6});
+    const yTensor = try Tensor.init(allocator, &[_]usize{6});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -179,20 +177,20 @@ test "subtract gradient" {
     yTensor.data[5] = -2.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create subtract operation
-    var sub_op = try graph.subtract(x.node(), y.node());
+    var sub_op = try Subtract.init(allocator, x.node(), y.node());
     defer sub_op.deinit();
 
     // First evaluate to cache the values
     _ = try sub_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{6});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{6});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;
@@ -233,19 +231,18 @@ test "subtract gradient" {
 
 test "subtract with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensors with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0]
         xTensor.data[1] = -1.0; // [0,1]
         xTensor.data[2] = 0.0; // [1,0]
         xTensor.data[3] = 1.0; // [1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 3.0; // [0,0]
         yTensor.data[1] = 0.0; // [0,1]
@@ -253,13 +250,13 @@ test "subtract with multiple shapes" {
         yTensor.data[3] = -1.0; // [1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create subtract operation
-        var sub_op = try graph.subtract(x.node(), y.node());
+        var sub_op = try Subtract.init(allocator, x.node(), y.node());
         defer sub_op.deinit();
 
         // Evaluate forward pass
@@ -279,7 +276,7 @@ test "subtract with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -316,7 +313,7 @@ test "subtract with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensors with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0,0]
         xTensor.data[1] = -1.0; // [0,0,1]
@@ -327,7 +324,7 @@ test "subtract with multiple shapes" {
         xTensor.data[6] = 4.0; // [1,1,0]
         xTensor.data[7] = 5.0; // [1,1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 3.0; // [0,0,0]
         yTensor.data[1] = 0.0; // [0,0,1]
@@ -339,13 +336,13 @@ test "subtract with multiple shapes" {
         yTensor.data[7] = -3.0; // [1,1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create subtract operation
-        var sub_op = try graph.subtract(x.node(), y.node());
+        var sub_op = try Subtract.init(allocator, x.node(), y.node());
         defer sub_op.deinit();
 
         // Evaluate forward pass
@@ -369,7 +366,7 @@ test "subtract with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -414,17 +411,16 @@ test "subtract with multiple shapes" {
 
 test "subtract reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
     xTensor.data[2] = 0.0; // zero input
     xTensor.data[3] = 1.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -432,13 +428,13 @@ test "subtract reset" {
     yTensor.data[3] = -1.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create subtract operation
-    var sub_op = try graph.subtract(x.node(), y.node());
+    var sub_op = try Subtract.init(allocator, x.node(), y.node());
     defer sub_op.deinit();
 
     // First evaluation

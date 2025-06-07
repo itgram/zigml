@@ -1,7 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Constant node.
 /// Represents a constant value in the computation graph.
@@ -61,10 +61,9 @@ pub const Constant = struct {
 
 test "constant basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create constant tensor
-    const valueTensor = try graph.tensor(&[_]usize{4});
+    const valueTensor = try Tensor.init(allocator, &[_]usize{4});
     defer valueTensor.deinit();
     valueTensor.data[0] = 1.0;
     valueTensor.data[1] = 2.0;
@@ -72,7 +71,7 @@ test "constant basic" {
     valueTensor.data[3] = 4.0;
 
     // Create constant node
-    var constant = try graph.constant(valueTensor);
+    var constant = try Constant.init(allocator, valueTensor);
     defer constant.deinit();
 
     // Evaluate
@@ -86,10 +85,9 @@ test "constant basic" {
 
 test "constant gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create constant tensor
-    const valueTensor = try graph.tensor(&[_]usize{4});
+    const valueTensor = try Tensor.init(allocator, &[_]usize{4});
     defer valueTensor.deinit();
     valueTensor.data[0] = 1.0;
     valueTensor.data[1] = 2.0;
@@ -97,11 +95,11 @@ test "constant gradient" {
     valueTensor.data[3] = 4.0;
 
     // Create constant node
-    var constant = try graph.constant(valueTensor);
+    var constant = try Constant.init(allocator, valueTensor);
     defer constant.deinit();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 2.0;
@@ -121,10 +119,9 @@ test "constant gradient" {
 
 test "constant with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create constant tensor
-    const valueTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const valueTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer valueTensor.deinit();
     valueTensor.data[0] = 1.0;
     valueTensor.data[1] = 2.0;
@@ -132,7 +129,7 @@ test "constant with different shapes" {
     valueTensor.data[3] = 4.0;
 
     // Create constant node
-    var constant = try graph.constant(valueTensor);
+    var constant = try Constant.init(allocator, valueTensor);
     defer constant.deinit();
 
     // Evaluate
@@ -146,10 +143,9 @@ test "constant with different shapes" {
 
 test "constant reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create constant tensor
-    const valueTensor = try graph.tensor(&[_]usize{4});
+    const valueTensor = try Tensor.init(allocator, &[_]usize{4});
     defer valueTensor.deinit();
     valueTensor.data[0] = 1.0;
     valueTensor.data[1] = 2.0;
@@ -157,7 +153,7 @@ test "constant reset" {
     valueTensor.data[3] = 4.0;
 
     // Create constant node
-    var constant = try graph.constant(valueTensor);
+    var constant = try Constant.init(allocator, valueTensor);
     defer constant.deinit();
 
     // First evaluation

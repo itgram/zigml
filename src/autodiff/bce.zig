@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 const epsilon = 1e-7; // Small value to prevent log(0), matching PyTorch's BCE implementation
 
@@ -115,7 +115,6 @@ pub const BCE = struct {
 
 test "bce basic evaluation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0.5, 0.5, 0.5], y = [0, 0.5, 1]
     // Expected BCE = -mean(y * log(x + epsilon) + (1 - y) * log(1 - x + epsilon))
@@ -123,24 +122,24 @@ test "bce basic evaluation" {
     // For x=0.5, y=0.5: -0.5*log(0.5 + 1e-7) - 0.5*log(0.5 + 1e-7) ≈ 0.693147
     // For x=0.5, y=1: -log(0.5 + 1e-7) ≈ 0.693147
     // Mean: (0.693147 + 0.693147 + 0.693147) / 3 ≈ 0.693147
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.5;
     x_tensor.data[1] = 0.5;
     x_tensor.data[2] = 0.5;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 0.0;
     y_tensor.data[1] = 0.5;
     y_tensor.data[2] = 1.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var bce = try graph.bce(x.node(), y.node());
+    var bce = try BCE.init(allocator, x.node(), y.node());
     defer bce.deinit();
 
     const result = try bce.eval();
@@ -149,30 +148,29 @@ test "bce basic evaluation" {
 
 test "bce gradient computation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0.5, 0.5, 0.5], y = [0, 0.5, 1]
     // Expected gradients:
     // ∂f/∂x = -(y/(x + epsilon) - (1-y)/(1-x + epsilon)) / n
     // ∂f/∂y = -(log(x + epsilon) - log(1-x + epsilon)) / n
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.5;
     x_tensor.data[1] = 0.5;
     x_tensor.data[2] = 0.5;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 0.0;
     y_tensor.data[1] = 0.5;
     y_tensor.data[2] = 1.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var bce = try graph.bce(x.node(), y.node());
+    var bce = try BCE.init(allocator, x.node(), y.node());
     defer bce.deinit();
 
     // First compute the forward pass
@@ -180,7 +178,7 @@ test "bce gradient computation" {
     try std.testing.expectApproxEqAbs(@as(f64, 0.6931471805599453), result.data[0], 1e-6);
 
     // Then compute gradients
-    const df_tensor = try graph.tensor(&[_]usize{1});
+    const df_tensor = try Tensor.init(allocator, &[_]usize{1});
     defer df_tensor.deinit();
     df_tensor.data[0] = 1.0;
 
@@ -216,26 +214,25 @@ test "bce gradient computation" {
 
 test "bce shape mismatch error" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0.5, 0.5, 0.5], y = [0, 0.5] (different shapes)
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.5;
     x_tensor.data[1] = 0.5;
     x_tensor.data[2] = 0.5;
 
-    const y_tensor = try graph.tensor(&[_]usize{2});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{2});
     defer y_tensor.deinit();
     y_tensor.data[0] = 0.0;
     y_tensor.data[1] = 0.5;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var bce = try graph.bce(x.node(), y.node());
+    var bce = try BCE.init(allocator, x.node(), y.node());
     defer bce.deinit();
 
     // Should return ShapeMismatch error
@@ -244,28 +241,27 @@ test "bce shape mismatch error" {
 
 test "bce with extreme values" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0.999, 0.001, 0.5], y = [1, 0, 0.5]
     // Testing with probabilities very close to 0 and 1
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.999;
     x_tensor.data[1] = 0.001;
     x_tensor.data[2] = 0.5;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
     y_tensor.data[2] = 0.5;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var bce = try graph.bce(x.node(), y.node());
+    var bce = try BCE.init(allocator, x.node(), y.node());
     defer bce.deinit();
 
     const result = try bce.eval();
@@ -279,26 +275,25 @@ test "bce with extreme values" {
 
 test "bce with perfect prediction" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0.99, 0.01], y = [1, 0]
     // Perfect prediction should result in very small loss
-    const x_tensor = try graph.tensor(&[_]usize{2});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{2});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.99;
     x_tensor.data[1] = 0.01;
 
-    const y_tensor = try graph.tensor(&[_]usize{2});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{2});
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var bce = try graph.bce(x.node(), y.node());
+    var bce = try BCE.init(allocator, x.node(), y.node());
     defer bce.deinit();
 
     const result = try bce.eval();

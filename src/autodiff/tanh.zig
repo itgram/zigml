@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Tanh function node.
 /// The Tanh (hyperbolic tangent) function.
@@ -96,10 +96,9 @@ pub const Tanh = struct {
 
 test "tanh basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -107,11 +106,11 @@ test "tanh basic" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tanh operation
-    var tanh_op = try graph.tanh(x.node());
+    var tanh_op = try Tanh.init(allocator, x.node());
     defer tanh_op.deinit();
 
     // First evaluate to cache the values
@@ -130,10 +129,9 @@ test "tanh basic" {
 
 test "tanh gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -141,11 +139,11 @@ test "tanh gradient" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tanh operation
-    var tanh_op = try graph.tanh(x.node());
+    var tanh_op = try Tanh.init(allocator, x.node());
     defer tanh_op.deinit();
 
     // First evaluate to cache the values
@@ -162,7 +160,7 @@ test "tanh gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -187,10 +185,9 @@ test "tanh gradient" {
 
 test "tanh with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -198,11 +195,11 @@ test "tanh with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tanh operation
-    var tanh_op = try graph.tanh(x.node());
+    var tanh_op = try Tanh.init(allocator, x.node());
     defer tanh_op.deinit();
 
     // Evaluate
@@ -221,10 +218,9 @@ test "tanh with different shapes" {
 
 test "tanh reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -232,11 +228,11 @@ test "tanh reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tanh operation
-    var tanh_op = try graph.tanh(x.node());
+    var tanh_op = try Tanh.init(allocator, x.node());
     defer tanh_op.deinit();
 
     // First evaluation

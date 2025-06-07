@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// PReLU (Parametric ReLU) function node.
 /// PReLU is a variant of the ReLU activation function that allows for a small, learnable slope for negative inputs.
@@ -115,10 +115,9 @@ pub const PReLU = struct {
 
 test "prelu basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -126,7 +125,7 @@ test "prelu basic" {
     xTensor.data[3] = 1.0;
 
     // Create alpha tensor with same shape as input
-    const alphaTensor = try graph.tensor(&[_]usize{4}); // same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{4}); // same shape as input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
@@ -134,11 +133,11 @@ test "prelu basic" {
     alphaTensor.data[3] = 0.04;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // First evaluate to cache the values
@@ -157,10 +156,9 @@ test "prelu basic" {
 
 test "prelu gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -168,7 +166,7 @@ test "prelu gradient" {
     xTensor.data[3] = 1.0;
 
     // Create alpha tensor with same shape as input
-    const alphaTensor = try graph.tensor(&[_]usize{4}); // same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{4}); // same shape as input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
@@ -176,11 +174,11 @@ test "prelu gradient" {
     alphaTensor.data[3] = 0.04;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // First evaluate to cache the values
@@ -197,7 +195,7 @@ test "prelu gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -236,10 +234,9 @@ test "prelu gradient" {
 
 test "prelu with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -247,7 +244,7 @@ test "prelu with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create alpha tensor with same shape as input
-    const alphaTensor = try graph.tensor(&[_]usize{ 2, 2 }); // same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 }); // same shape as input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
@@ -255,11 +252,11 @@ test "prelu with different shapes" {
     alphaTensor.data[3] = 0.04;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // Evaluate
@@ -278,10 +275,9 @@ test "prelu with different shapes" {
 
 test "prelu reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -289,7 +285,7 @@ test "prelu reset" {
     xTensor.data[3] = 1.0;
 
     // Create alpha tensor with same shape as input
-    const alphaTensor = try graph.tensor(&[_]usize{4}); // same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{4}); // same shape as input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
@@ -297,11 +293,11 @@ test "prelu reset" {
     alphaTensor.data[3] = 0.04;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // First evaluation
@@ -334,26 +330,25 @@ test "prelu reset" {
 
 test "prelu alpha learning" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{2});
+    const xTensor = try Tensor.init(allocator, &[_]usize{2});
     defer xTensor.deinit();
     xTensor.data[0] = -1.0;
     xTensor.data[1] = 2.0;
 
     // Create alpha tensor with same shape as input
-    const alphaTensor = try graph.tensor(&[_]usize{2}); // same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{2}); // same shape as input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // First evaluation
@@ -368,7 +363,7 @@ test "prelu alpha learning" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{2});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{2});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -429,10 +424,9 @@ test "prelu alpha learning" {
 
 test "prelu shape mismatch" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -440,26 +434,25 @@ test "prelu shape mismatch" {
     xTensor.data[3] = 1.0;
 
     // Create alpha tensor with different shape
-    const alphaTensor = try graph.tensor(&[_]usize{2}); // different shape from input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{2}); // different shape from input
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01;
     alphaTensor.data[1] = 0.02;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation - should fail with ShapeMismatch error
-    const prelu_op = graph.prelu(x.node(), alphaTensor);
+    const prelu_op = PReLU.init(allocator, x.node(), alphaTensor);
     try std.testing.expectError(error.ShapeMismatch, prelu_op);
 }
 
 test "prelu with 2d shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with shape [2, 2]
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // [0,0]
     xTensor.data[1] = -1.0; // [0,1]
@@ -467,7 +460,7 @@ test "prelu with 2d shapes" {
     xTensor.data[3] = 1.0; // [1,1]
 
     // Create alpha tensor with same shape [2, 2]
-    const alphaTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer alphaTensor.deinit();
     alphaTensor.data[0] = 0.01; // [0,0]
     alphaTensor.data[1] = 0.02; // [0,1]
@@ -475,11 +468,11 @@ test "prelu with 2d shapes" {
     alphaTensor.data[3] = 0.04; // [1,1]
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create prelu operation
-    var prelu_op = try graph.prelu(x.node(), alphaTensor);
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
     defer prelu_op.deinit();
 
     // Evaluate forward pass
@@ -496,7 +489,7 @@ test "prelu with 2d shapes" {
     }
 
     // Test gradient computation
-    const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0; // [0,0]
     gradTensor.data[1] = 1.0; // [0,1]

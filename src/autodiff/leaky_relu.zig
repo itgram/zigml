@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Leaky ReLU activation function node.
 /// The Leaky ReLU function is used in neural networks to introduce non-linearity.
@@ -98,10 +98,9 @@ pub const LeakyReLU = struct {
 
 test "leaky_relu basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -109,11 +108,11 @@ test "leaky_relu basic" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create leaky relu operation
-    var leaky_relu_op = try graph.leakyReLU(x.node(), 0.01);
+    var leaky_relu_op = try LeakyReLU.init(allocator, x.node(), 0.01);
     defer leaky_relu_op.deinit();
 
     // First evaluate to cache the values
@@ -132,10 +131,9 @@ test "leaky_relu basic" {
 
 test "leaky_relu gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -143,11 +141,11 @@ test "leaky_relu gradient" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create leaky relu operation
-    var leaky_relu_op = try graph.leakyReLU(x.node(), 0.01);
+    var leaky_relu_op = try LeakyReLU.init(allocator, x.node(), 0.01);
     defer leaky_relu_op.deinit();
 
     // First evaluate to cache the values
@@ -164,7 +162,7 @@ test "leaky_relu gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -189,10 +187,9 @@ test "leaky_relu gradient" {
 
 test "leaky_relu with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -200,11 +197,11 @@ test "leaky_relu with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create leaky relu operation
-    var leaky_relu_op = try graph.leakyReLU(x.node(), 0.01);
+    var leaky_relu_op = try LeakyReLU.init(allocator, x.node(), 0.01);
     defer leaky_relu_op.deinit();
 
     // Evaluate
@@ -223,10 +220,9 @@ test "leaky_relu with different shapes" {
 
 test "leaky_relu reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -234,11 +230,11 @@ test "leaky_relu reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create leaky relu operation
-    var leaky_relu_op = try graph.leakyReLU(x.node(), 0.01);
+    var leaky_relu_op = try LeakyReLU.init(allocator, x.node(), 0.01);
     defer leaky_relu_op.deinit();
 
     // First evaluation
@@ -271,20 +267,19 @@ test "leaky_relu reset" {
 
 test "leaky_relu custom alpha" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{2});
+    const xTensor = try Tensor.init(allocator, &[_]usize{2});
     defer xTensor.deinit();
     xTensor.data[0] = -1.0;
     xTensor.data[1] = 2.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create leaky relu operation with custom alpha
-    var leaky_relu_op = try graph.leakyReLU(x.node(), 0.5);
+    var leaky_relu_op = try LeakyReLU.init(allocator, x.node(), 0.5);
     defer leaky_relu_op.deinit();
 
     const result = try leaky_relu_op.eval();

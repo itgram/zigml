@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Cos function node.
 /// The Cos node represents the cosine function applied to a tensor.
@@ -98,10 +98,9 @@ pub const Cos = struct {
 
 test "cos basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -109,11 +108,11 @@ test "cos basic" {
     xTensor.data[3] = std.math.pi;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create cos operation
-    var cos_op = try graph.cos(x.node());
+    var cos_op = try Cos.init(allocator, x.node());
     defer cos_op.deinit();
 
     // Evaluate
@@ -132,10 +131,9 @@ test "cos basic" {
 
 test "cos gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -143,15 +141,15 @@ test "cos gradient" {
     xTensor.data[3] = std.math.pi;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create cos operation
-    var cos_op = try graph.cos(x.node());
+    var cos_op = try Cos.init(allocator, x.node());
     defer cos_op.deinit();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -176,10 +174,9 @@ test "cos gradient" {
 
 test "cos with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -187,11 +184,11 @@ test "cos with different shapes" {
     xTensor.data[3] = std.math.pi;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create cos operation
-    var cos_op = try graph.cos(x.node());
+    var cos_op = try Cos.init(allocator, x.node());
     defer cos_op.deinit();
 
     // Evaluate
@@ -210,10 +207,9 @@ test "cos with different shapes" {
 
 test "cos reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -221,11 +217,11 @@ test "cos reset" {
     xTensor.data[3] = std.math.pi;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create cos operation
-    var cos_op = try graph.cos(x.node());
+    var cos_op = try Cos.init(allocator, x.node());
     defer cos_op.deinit();
 
     // First evaluation

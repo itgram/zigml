@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Mean Squared Error function node.
 /// The MSE node represents the mean squared error function applied to a tensor.
@@ -114,28 +114,27 @@ pub const MSE = struct {
 
 test "mse basic evaluation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2, 2]
     // Expected MSE = ((1-2)² + (2-2)² + (3-2)²) / 3 = (1 + 0 + 1) / 3 = 2/3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
     y_tensor.data[2] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mse = try graph.mse(x.node(), y.node());
+    var mse = try MSE.init(allocator, x.node(), y.node());
     defer mse.deinit();
 
     const result = try mse.eval();
@@ -144,29 +143,28 @@ test "mse basic evaluation" {
 
 test "mse gradient computation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2, 2]
     // Expected gradients:
     // ∂f/∂x = [2(1-2), 2(2-2), 2(3-2)] / 3 = [-2, 0, 2] / 3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
     y_tensor.data[2] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mse = try graph.mse(x.node(), y.node());
+    var mse = try MSE.init(allocator, x.node(), y.node());
     defer mse.deinit();
 
     // First compute the forward pass
@@ -174,7 +172,7 @@ test "mse gradient computation" {
     try std.testing.expectEqual(@as(f64, 2.0 / 3.0), result.data[0]);
 
     // Then compute gradients
-    const df_tensor = try graph.tensor(&[_]usize{1});
+    const df_tensor = try Tensor.init(allocator, &[_]usize{1});
     defer df_tensor.deinit();
     df_tensor.data[0] = 1.0;
 
@@ -210,26 +208,25 @@ test "mse gradient computation" {
 
 test "mse shape mismatch error" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2] (different shapes)
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{2});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{2});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mse = try graph.mse(x.node(), y.node());
+    var mse = try MSE.init(allocator, x.node(), y.node());
     defer mse.deinit();
 
     // Should return ShapeMismatch error
@@ -238,28 +235,27 @@ test "mse shape mismatch error" {
 
 test "mse with negative values" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [-1, -2, -3], y = [-2, -2, -2]
     // Expected MSE = ((-1-(-2))² + (-2-(-2))² + (-3-(-2))²) / 3 = (1 + 0 + 1) / 3 = 2/3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = -1.0;
     x_tensor.data[1] = -2.0;
     x_tensor.data[2] = -3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = -2.0;
     y_tensor.data[1] = -2.0;
     y_tensor.data[2] = -2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mse = try graph.mse(x.node(), y.node());
+    var mse = try MSE.init(allocator, x.node(), y.node());
     defer mse.deinit();
 
     const result = try mse.eval();
@@ -268,28 +264,27 @@ test "mse with negative values" {
 
 test "mse with zero values" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0, 0, 0], y = [0, 0, 0]
     // Expected MSE = 0
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.0;
     x_tensor.data[1] = 0.0;
     x_tensor.data[2] = 0.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 0.0;
     y_tensor.data[1] = 0.0;
     y_tensor.data[2] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mse = try graph.mse(x.node(), y.node());
+    var mse = try MSE.init(allocator, x.node(), y.node());
     defer mse.deinit();
 
     const result = try mse.eval();

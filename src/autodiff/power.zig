@@ -2,7 +2,7 @@ const std = @import("std");
 const math = std.math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 const epsilon = 1e-7; // Small value to prevent log(0), matching PyTorch's implementation
 
@@ -106,17 +106,16 @@ pub const Power = struct {
 
 test "power basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // positive base
     xTensor.data[1] = 3.0; // positive base
     xTensor.data[2] = 0.5; // fractional base
     xTensor.data[3] = 4.0; // positive base
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 2.0; // positive exponent
     yTensor.data[1] = 0.0; // zero exponent
@@ -124,13 +123,13 @@ test "power basic" {
     yTensor.data[3] = 0.5; // fractional exponent
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create power operation
-    var pow_op = try graph.power(x.node(), y.node());
+    var pow_op = try Power.init(allocator, x.node(), y.node());
     defer pow_op.deinit();
 
     // Evaluate forward pass
@@ -155,17 +154,16 @@ test "power basic" {
 
 test "power gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // positive base
     xTensor.data[1] = 3.0; // positive base
     xTensor.data[2] = 0.5; // fractional base
     xTensor.data[3] = 4.0; // positive base
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 2.0; // positive exponent
     yTensor.data[1] = 0.0; // zero exponent
@@ -173,20 +171,20 @@ test "power gradient" {
     yTensor.data[3] = 0.5; // fractional exponent
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create power operation
-    var pow_op = try graph.power(x.node(), y.node());
+    var pow_op = try Power.init(allocator, x.node(), y.node());
     defer pow_op.deinit();
 
     // First evaluate to cache the values
     _ = try pow_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -224,19 +222,18 @@ test "power gradient" {
 
 test "power with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensors with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = 2.0; // [0,0]
         xTensor.data[1] = 3.0; // [0,1]
         xTensor.data[2] = 0.5; // [1,0]
         xTensor.data[3] = 4.0; // [1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 2.0; // [0,0]
         yTensor.data[1] = 0.0; // [0,1]
@@ -244,13 +241,13 @@ test "power with multiple shapes" {
         yTensor.data[3] = 0.5; // [1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create power operation
-        var pow_op = try graph.power(x.node(), y.node());
+        var pow_op = try Power.init(allocator, x.node(), y.node());
         defer pow_op.deinit();
 
         // Evaluate forward pass
@@ -270,7 +267,7 @@ test "power with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         gradTensor.data[0] = 1.0;
         gradTensor.data[1] = 1.0;
@@ -308,7 +305,7 @@ test "power with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensors with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = 2.0; // [0,0,0]
         xTensor.data[1] = 3.0; // [0,0,1]
@@ -319,7 +316,7 @@ test "power with multiple shapes" {
         xTensor.data[6] = 3.5; // [1,1,0]
         xTensor.data[7] = 4.5; // [1,1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 2.0; // [0,0,0]
         yTensor.data[1] = 0.0; // [0,0,1]
@@ -331,13 +328,13 @@ test "power with multiple shapes" {
         yTensor.data[7] = 0.5; // [1,1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create power operation
-        var pow_op = try graph.power(x.node(), y.node());
+        var pow_op = try Power.init(allocator, x.node(), y.node());
         defer pow_op.deinit();
 
         // Evaluate forward pass
@@ -361,7 +358,7 @@ test "power with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -406,17 +403,16 @@ test "power with multiple shapes" {
 
 test "power reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // positive base
     xTensor.data[1] = 3.0; // positive base
     xTensor.data[2] = 0.5; // fractional base
     xTensor.data[3] = 4.0; // positive base
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 2.0; // positive exponent
     yTensor.data[1] = 0.0; // zero exponent
@@ -424,13 +420,13 @@ test "power reset" {
     yTensor.data[3] = 0.5; // fractional exponent
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create power operation
-    var pow_op = try graph.power(x.node(), y.node());
+    var pow_op = try Power.init(allocator, x.node(), y.node());
     defer pow_op.deinit();
 
     // First evaluation

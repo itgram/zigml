@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Sin function node.
 /// The Sin node represents the sine function applied to a tensor.
@@ -98,10 +98,9 @@ pub const Sin = struct {
 
 test "sin basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -math.pi; // -π
     xTensor.data[1] = -math.pi / 2.0; // -π/2
@@ -111,11 +110,11 @@ test "sin basic" {
     xTensor.data[5] = 2.0 * math.pi; // 2π
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sin operation
-    var sin_op = try graph.sin(x.node());
+    var sin_op = try Sin.init(allocator, x.node());
     defer sin_op.deinit();
 
     // Evaluate forward pass
@@ -142,10 +141,9 @@ test "sin basic" {
 
 test "sin gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -math.pi; // -π
     xTensor.data[1] = -math.pi / 2.0; // -π/2
@@ -155,18 +153,18 @@ test "sin gradient" {
     xTensor.data[5] = 2.0 * math.pi; // 2π
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sin operation
-    var sin_op = try graph.sin(x.node());
+    var sin_op = try Sin.init(allocator, x.node());
     defer sin_op.deinit();
 
     // First evaluate to cache the values
     _ = try sin_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{6});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{6});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;
@@ -193,12 +191,11 @@ test "sin gradient" {
 
 test "sin with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensor with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -math.pi / 2.0; // [0,0]
         xTensor.data[1] = 0.0; // [0,1]
@@ -206,11 +203,11 @@ test "sin with multiple shapes" {
         xTensor.data[3] = math.pi; // [1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create sin operation
-        var sin_op = try graph.sin(x.node());
+        var sin_op = try Sin.init(allocator, x.node());
         defer sin_op.deinit();
 
         // Evaluate forward pass
@@ -230,7 +227,7 @@ test "sin with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -255,7 +252,7 @@ test "sin with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensor with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -math.pi; // [0,0,0]
         xTensor.data[1] = -math.pi / 2.0; // [0,0,1]
@@ -267,11 +264,11 @@ test "sin with multiple shapes" {
         xTensor.data[7] = 5.0 * math.pi / 2.0; // [1,1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create sin operation
-        var sin_op = try graph.sin(x.node());
+        var sin_op = try Sin.init(allocator, x.node());
         defer sin_op.deinit();
 
         // Evaluate forward pass
@@ -295,7 +292,7 @@ test "sin with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -324,10 +321,9 @@ test "sin with multiple shapes" {
 
 test "sin reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -math.pi / 2.0; // -π/2
     xTensor.data[1] = 0.0; // 0
@@ -335,11 +331,11 @@ test "sin reset" {
     xTensor.data[3] = math.pi; // π
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sin operation
-    var sin_op = try graph.sin(x.node());
+    var sin_op = try Sin.init(allocator, x.node());
     defer sin_op.deinit();
 
     // First evaluation

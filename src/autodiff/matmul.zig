@@ -1,7 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Matrix multiplication node.
 /// The MatMul node represents the matrix multiplication of two tensors.
@@ -152,10 +152,9 @@ pub const MatMul = struct {
 
 test "matmul basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer xTensor.deinit();
     xTensor.data[0] = 1.0; // [0,0]
     xTensor.data[1] = 2.0; // [0,1]
@@ -164,7 +163,7 @@ test "matmul basic" {
     xTensor.data[4] = 5.0; // [1,1]
     xTensor.data[5] = 6.0; // [1,2]
 
-    const yTensor = try graph.tensor(&[_]usize{ 3, 2 });
+    const yTensor = try Tensor.init(allocator, &[_]usize{ 3, 2 });
     defer yTensor.deinit();
     yTensor.data[0] = 7.0; // [0,0]
     yTensor.data[1] = 8.0; // [0,1]
@@ -174,13 +173,13 @@ test "matmul basic" {
     yTensor.data[5] = 12.0; // [2,1]
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create matrix multiplication operation
-    var matmul_op = try graph.matmul(x.node(), y.node());
+    var matmul_op = try MatMul.init(allocator, x.node(), y.node());
     defer matmul_op.deinit();
 
     // Evaluate forward pass
@@ -202,10 +201,9 @@ test "matmul basic" {
 
 test "matmul gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer xTensor.deinit();
     xTensor.data[0] = 1.0; // [0,0]
     xTensor.data[1] = 2.0; // [0,1]
@@ -214,7 +212,7 @@ test "matmul gradient" {
     xTensor.data[4] = 5.0; // [1,1]
     xTensor.data[5] = 6.0; // [1,2]
 
-    const yTensor = try graph.tensor(&[_]usize{ 3, 2 });
+    const yTensor = try Tensor.init(allocator, &[_]usize{ 3, 2 });
     defer yTensor.deinit();
     yTensor.data[0] = 7.0; // [0,0]
     yTensor.data[1] = 8.0; // [0,1]
@@ -224,20 +222,20 @@ test "matmul gradient" {
     yTensor.data[5] = 12.0; // [2,1]
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create matrix multiplication operation
-    var matmul_op = try graph.matmul(x.node(), y.node());
+    var matmul_op = try MatMul.init(allocator, x.node(), y.node());
     defer matmul_op.deinit();
 
     // First evaluate to cache the values
     _ = try matmul_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0; // [0,0]
     gradTensor.data[1] = 1.0; // [0,1]

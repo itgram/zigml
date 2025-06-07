@@ -1,7 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Add two nodes
 /// where x and y are nodes that evaluate to tensors.
@@ -103,17 +103,16 @@ pub const Add = struct {
 
 test "add basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = 2.0;
     xTensor.data[2] = 3.0;
     xTensor.data[3] = 4.0;
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 5.0;
     yTensor.data[1] = 6.0;
@@ -121,13 +120,13 @@ test "add basic" {
     yTensor.data[3] = 8.0;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create add operation
-    var add = try graph.add(x.node(), y.node());
+    var add = try Add.init(allocator, x.node(), y.node());
     defer add.deinit();
 
     // Evaluate
@@ -141,17 +140,16 @@ test "add basic" {
 
 test "add gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = 2.0;
     xTensor.data[2] = 3.0;
     xTensor.data[3] = 4.0;
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 5.0;
     yTensor.data[1] = 6.0;
@@ -159,17 +157,17 @@ test "add gradient" {
     yTensor.data[3] = 8.0;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create add operation
-    var add = try graph.add(x.node(), y.node());
+    var add = try Add.init(allocator, x.node(), y.node());
     defer add.deinit();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 2.0;
@@ -193,17 +191,16 @@ test "add gradient" {
 
 test "add with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = 2.0;
     xTensor.data[2] = 3.0;
     xTensor.data[3] = 4.0;
 
-    const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer yTensor.deinit();
     yTensor.data[0] = 5.0;
     yTensor.data[1] = 6.0;
@@ -211,13 +208,13 @@ test "add with different shapes" {
     yTensor.data[3] = 8.0;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create add operation
-    var add = try graph.add(x.node(), y.node());
+    var add = try Add.init(allocator, x.node(), y.node());
     defer add.deinit();
 
     // Evaluate
@@ -231,17 +228,16 @@ test "add with different shapes" {
 
 test "add reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = 2.0;
     xTensor.data[2] = 3.0;
     xTensor.data[3] = 4.0;
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 5.0;
     yTensor.data[1] = 6.0;
@@ -249,13 +245,13 @@ test "add reset" {
     yTensor.data[3] = 8.0;
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create add operation
-    var add = try graph.add(x.node(), y.node());
+    var add = try Add.init(allocator, x.node(), y.node());
     defer add.deinit();
 
     // First evaluation

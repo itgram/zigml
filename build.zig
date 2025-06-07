@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
 
     // Create the autodiff module
     const autodiff_mod = b.createModule(.{
-        .root_source_file = b.path("src/autodiff/graph.zig"),
+        .root_source_file = b.path("src/autodiff/autodiff.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -130,7 +130,7 @@ pub fn build(b: *std.Build) void {
 
     // Add test for autodiff.zig
     const autodiff_test = b.addTest(.{
-        .root_source_file = b.path("src/autodiff/graph.zig"),
+        .root_source_file = b.path("src/autodiff/autodiff.zig"),
         .target = target,
         .optimize = optimize,
     });

@@ -1,7 +1,6 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
 
 /// Variable node.
 /// The Variable node represents a variable in the computation graph.
@@ -83,10 +82,9 @@ pub const Variable = struct {
 
 test "variable basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -96,7 +94,7 @@ test "variable basic" {
     xTensor.data[5] = 3.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Evaluate forward pass
@@ -123,10 +121,9 @@ test "variable basic" {
 
 test "variable gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -136,14 +133,14 @@ test "variable gradient" {
     xTensor.data[5] = 3.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // First evaluate to cache the values
     _ = try x.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{6});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{6});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;
@@ -170,12 +167,11 @@ test "variable gradient" {
 
 test "variable with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensor with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0]
         xTensor.data[1] = -1.0; // [0,1]
@@ -183,7 +179,7 @@ test "variable with multiple shapes" {
         xTensor.data[3] = 1.0; // [1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Evaluate forward pass
@@ -203,7 +199,7 @@ test "variable with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -228,7 +224,7 @@ test "variable with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensor with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0,0]
         xTensor.data[1] = -1.0; // [0,0,1]
@@ -240,7 +236,7 @@ test "variable with multiple shapes" {
         xTensor.data[7] = 5.0; // [1,1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Evaluate forward pass
@@ -264,7 +260,7 @@ test "variable with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -293,10 +289,9 @@ test "variable with multiple shapes" {
 
 test "variable reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -304,7 +299,7 @@ test "variable reset" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // First evaluation
@@ -342,10 +337,9 @@ test "variable reset" {
 
 test "variable gradient accumulation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -353,14 +347,14 @@ test "variable gradient accumulation" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // First evaluate to cache the values
     _ = try x.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;

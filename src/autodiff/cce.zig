@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 const epsilon = 1e-12; // Small value to prevent log(0), matching PyTorch's CCE implementation
 
@@ -119,12 +119,11 @@ pub const CCE = struct {
 
 test "cce basic evaluation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples
     // x = [[0.7, 0.2, 0.1], [0.1, 0.8, 0.1]] (valid probability distributions)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.7; // sample 1, class 1
     x_tensor.data[1] = 0.2; // sample 1, class 2
@@ -133,7 +132,7 @@ test "cce basic evaluation" {
     x_tensor.data[4] = 0.8; // sample 2, class 2
     x_tensor.data[5] = 0.1; // sample 2, class 3
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0; // sample 1, class 1
     y_tensor.data[1] = 0.0; // sample 1, class 2
@@ -142,12 +141,12 @@ test "cce basic evaluation" {
     y_tensor.data[4] = 1.0; // sample 2, class 2
     y_tensor.data[5] = 0.0; // sample 2, class 3
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var cce = try graph.cce(x.node(), y.node());
+    var cce = try CCE.init(allocator, x.node(), y.node());
     defer cce.deinit();
 
     const result = try cce.eval();
@@ -160,12 +159,11 @@ test "cce basic evaluation" {
 
 test "cce gradient computation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples
     // x = [[0.7, 0.2, 0.1], [0.1, 0.8, 0.1]] (valid probability distributions)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.7;
     x_tensor.data[1] = 0.2;
@@ -174,7 +172,7 @@ test "cce gradient computation" {
     x_tensor.data[4] = 0.8;
     x_tensor.data[5] = 0.1;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
@@ -183,12 +181,12 @@ test "cce gradient computation" {
     y_tensor.data[4] = 1.0;
     y_tensor.data[5] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var cce = try graph.cce(x.node(), y.node());
+    var cce = try CCE.init(allocator, x.node(), y.node());
     defer cce.deinit();
 
     // First compute the forward pass
@@ -200,7 +198,7 @@ test "cce gradient computation" {
     y.reset();
 
     // Then compute gradients
-    const df_tensor = try graph.tensor(&[_]usize{1});
+    const df_tensor = try Tensor.init(allocator, &[_]usize{1});
     defer df_tensor.deinit();
     df_tensor.data[0] = 1.0;
 
@@ -250,10 +248,9 @@ test "cce gradient computation" {
 
 test "cce shape mismatch error" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [[0.7, 0.2, 0.1], [0.1, 0.8, 0.1]], y = [[1, 0], [0, 1]] (different shapes)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.7;
     x_tensor.data[1] = 0.2;
@@ -262,19 +259,19 @@ test "cce shape mismatch error" {
     x_tensor.data[4] = 0.8;
     x_tensor.data[5] = 0.1;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
     y_tensor.data[2] = 0.0;
     y_tensor.data[3] = 1.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var cce = try graph.cce(x.node(), y.node());
+    var cce = try CCE.init(allocator, x.node(), y.node());
     defer cce.deinit();
 
     // Should return ShapeMismatch error
@@ -283,12 +280,11 @@ test "cce shape mismatch error" {
 
 test "cce with perfect prediction" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples with perfect predictions
     // x = [[0.99, 0.005, 0.005], [0.005, 0.99, 0.005]] (valid probability distributions)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.99;
     x_tensor.data[1] = 0.005;
@@ -297,7 +293,7 @@ test "cce with perfect prediction" {
     x_tensor.data[4] = 0.99;
     x_tensor.data[5] = 0.005;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
@@ -306,12 +302,12 @@ test "cce with perfect prediction" {
     y_tensor.data[4] = 1.0;
     y_tensor.data[5] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var cce = try graph.cce(x.node(), y.node());
+    var cce = try CCE.init(allocator, x.node(), y.node());
     defer cce.deinit();
 
     const result = try cce.eval();
@@ -324,12 +320,11 @@ test "cce with perfect prediction" {
 
 test "cce with uniform distribution" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: 3 classes, 2 samples with uniform predictions
     // x = [[0.33, 0.33, 0.34], [0.33, 0.34, 0.33]] (valid probability distributions)
     // y = [[1, 0, 0], [0, 1, 0]] (one-hot encoded labels)
-    const x_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const x_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.33;
     x_tensor.data[1] = 0.33;
@@ -338,7 +333,7 @@ test "cce with uniform distribution" {
     x_tensor.data[4] = 0.34;
     x_tensor.data[5] = 0.33;
 
-    const y_tensor = try graph.tensor(&[_]usize{ 2, 3 });
+    const y_tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
     defer y_tensor.deinit();
     y_tensor.data[0] = 1.0;
     y_tensor.data[1] = 0.0;
@@ -347,12 +342,12 @@ test "cce with uniform distribution" {
     y_tensor.data[4] = 1.0;
     y_tensor.data[5] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var cce = try graph.cce(x.node(), y.node());
+    var cce = try CCE.init(allocator, x.node(), y.node());
     defer cce.deinit();
 
     const result = try cce.eval();

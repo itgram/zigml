@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Log function node.
 /// The Log node represents the logarithm function applied to a tensor.
@@ -97,10 +97,9 @@ pub const Log = struct {
 
 test "log basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = 0.01; // very small positive input
     xTensor.data[1] = 0.1; // small positive input
@@ -110,11 +109,11 @@ test "log basic" {
     xTensor.data[5] = 100.0; // large positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create log operation
-    var log_op = try graph.log(x.node());
+    var log_op = try Log.init(allocator, x.node());
     defer log_op.deinit();
 
     // Evaluate forward pass
@@ -142,10 +141,9 @@ test "log basic" {
 
 test "log gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.1; // small positive input
     xTensor.data[1] = 0.5; // small positive input
@@ -153,18 +151,18 @@ test "log gradient" {
     xTensor.data[3] = 10.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create log operation
-    var log_op = try graph.log(x.node());
+    var log_op = try Log.init(allocator, x.node());
     defer log_op.deinit();
 
     // First evaluate to cache the values
     _ = try log_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -191,12 +189,11 @@ test "log gradient" {
 
 test "log with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensor with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = 0.1; // [0,0]
         xTensor.data[1] = 0.5; // [0,1]
@@ -204,11 +201,11 @@ test "log with multiple shapes" {
         xTensor.data[3] = 10.0; // [1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create log operation
-        var log_op = try graph.log(x.node());
+        var log_op = try Log.init(allocator, x.node());
         defer log_op.deinit();
 
         // Evaluate forward pass
@@ -228,7 +225,7 @@ test "log with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         gradTensor.data[0] = 1.0;
         gradTensor.data[1] = 1.0;
@@ -255,7 +252,7 @@ test "log with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensor with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = 0.1; // [0,0,0]
         xTensor.data[1] = 0.5; // [0,0,1]
@@ -267,11 +264,11 @@ test "log with multiple shapes" {
         xTensor.data[7] = 20.0; // [1,1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create log operation
-        var log_op = try graph.log(x.node());
+        var log_op = try Log.init(allocator, x.node());
         defer log_op.deinit();
 
         // Evaluate forward pass
@@ -295,7 +292,7 @@ test "log with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -325,10 +322,9 @@ test "log with multiple shapes" {
 
 test "log reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.1; // small positive input
     xTensor.data[1] = 0.5; // small positive input
@@ -336,11 +332,11 @@ test "log reset" {
     xTensor.data[3] = 10.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create log operation
-    var log_op = try graph.log(x.node());
+    var log_op = try Log.init(allocator, x.node());
     defer log_op.deinit();
 
     // First evaluation

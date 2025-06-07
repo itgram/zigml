@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// ReLU function node.
 /// The ReLU (Rectified Linear Unit) activation function
@@ -95,10 +95,9 @@ pub const ReLU = struct {
 
 test "relu basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -106,11 +105,11 @@ test "relu basic" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create relu operation
-    var relu_op = try graph.relu(x.node());
+    var relu_op = try ReLU.init(allocator, x.node());
     defer relu_op.deinit();
 
     // First evaluate to cache the values
@@ -129,10 +128,9 @@ test "relu basic" {
 
 test "relu gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -140,11 +138,11 @@ test "relu gradient" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create relu operation
-    var relu_op = try graph.relu(x.node());
+    var relu_op = try ReLU.init(allocator, x.node());
     defer relu_op.deinit();
 
     // First evaluate to cache the values
@@ -161,7 +159,7 @@ test "relu gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -186,10 +184,9 @@ test "relu gradient" {
 
 test "relu with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -197,11 +194,11 @@ test "relu with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create relu operation
-    var relu_op = try graph.relu(x.node());
+    var relu_op = try ReLU.init(allocator, x.node());
     defer relu_op.deinit();
 
     // Evaluate
@@ -220,10 +217,9 @@ test "relu with different shapes" {
 
 test "relu reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -231,11 +227,11 @@ test "relu reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create relu operation
-    var relu_op = try graph.relu(x.node());
+    var relu_op = try ReLU.init(allocator, x.node());
     defer relu_op.deinit();
 
     // First evaluation

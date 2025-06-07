@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Mean Absolute Error function node.
 /// The MAE node represents the mean absolute error function applied to a tensor.
@@ -114,28 +114,27 @@ pub const MAE = struct {
 
 test "mae basic evaluation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2, 2]
     // Expected MAE = (|1-2| + |2-2| + |3-2|) / 3 = (1 + 0 + 1) / 3 = 2/3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
     y_tensor.data[2] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mae = try graph.mae(x.node(), y.node());
+    var mae = try MAE.init(allocator, x.node(), y.node());
     defer mae.deinit();
 
     const result = try mae.eval();
@@ -144,29 +143,28 @@ test "mae basic evaluation" {
 
 test "mae gradient computation" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2, 2]
     // Expected gradients:
     // ∂f/∂x = [sign(1-2), sign(2-2), sign(3-2)] / 3 = [-1, 0, 1] / 3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
     y_tensor.data[2] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mae = try graph.mae(x.node(), y.node());
+    var mae = try MAE.init(allocator, x.node(), y.node());
     defer mae.deinit();
 
     // First compute the forward pass
@@ -174,7 +172,7 @@ test "mae gradient computation" {
     try std.testing.expectEqual(@as(f64, 2.0 / 3.0), result.data[0]);
 
     // Then compute gradients
-    const df_tensor = try graph.tensor(&[_]usize{1});
+    const df_tensor = try Tensor.init(allocator, &[_]usize{1});
     defer df_tensor.deinit();
     df_tensor.data[0] = 1.0;
 
@@ -210,26 +208,25 @@ test "mae gradient computation" {
 
 test "mae shape mismatch error" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [1, 2, 3], y = [2, 2] (different shapes)
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 1.0;
     x_tensor.data[1] = 2.0;
     x_tensor.data[2] = 3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{2});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{2});
     defer y_tensor.deinit();
     y_tensor.data[0] = 2.0;
     y_tensor.data[1] = 2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mae = try graph.mae(x.node(), y.node());
+    var mae = try MAE.init(allocator, x.node(), y.node());
     defer mae.deinit();
 
     // Should return ShapeMismatch error
@@ -238,28 +235,27 @@ test "mae shape mismatch error" {
 
 test "mae with negative values" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [-1, -2, -3], y = [-2, -2, -2]
     // Expected MAE = (|-1-(-2)| + |-2-(-2)| + |-3-(-2)|) / 3 = (1 + 0 + 1) / 3 = 2/3
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = -1.0;
     x_tensor.data[1] = -2.0;
     x_tensor.data[2] = -3.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = -2.0;
     y_tensor.data[1] = -2.0;
     y_tensor.data[2] = -2.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mae = try graph.mae(x.node(), y.node());
+    var mae = try MAE.init(allocator, x.node(), y.node());
     defer mae.deinit();
 
     const result = try mae.eval();
@@ -268,28 +264,27 @@ test "mae with negative values" {
 
 test "mae with zero values" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test case: x = [0, 0, 0], y = [0, 0, 0]
     // Expected MAE = 0
-    const x_tensor = try graph.tensor(&[_]usize{3});
+    const x_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer x_tensor.deinit();
     x_tensor.data[0] = 0.0;
     x_tensor.data[1] = 0.0;
     x_tensor.data[2] = 0.0;
 
-    const y_tensor = try graph.tensor(&[_]usize{3});
+    const y_tensor = try Tensor.init(allocator, &[_]usize{3});
     defer y_tensor.deinit();
     y_tensor.data[0] = 0.0;
     y_tensor.data[1] = 0.0;
     y_tensor.data[2] = 0.0;
 
-    var x = try graph.variable("x", x_tensor);
+    var x = try Variable.init(allocator, "x", x_tensor);
     defer x.deinit();
-    var y = try graph.variable("y", y_tensor);
+    var y = try Variable.init(allocator, "y", y_tensor);
     defer y.deinit();
 
-    var mae = try graph.mae(x.node(), y.node());
+    var mae = try MAE.init(allocator, x.node(), y.node());
     defer mae.deinit();
 
     const result = try mae.eval();

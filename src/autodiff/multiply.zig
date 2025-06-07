@@ -1,7 +1,7 @@
 const std = @import("std");
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Multiply function node.
 /// The Multiply node represents the element-wise multiplication of two tensors.
@@ -105,17 +105,16 @@ pub const Multiply = struct {
 
 test "multiply basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
     xTensor.data[2] = 0.0; // zero input
     xTensor.data[3] = 2.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -123,13 +122,13 @@ test "multiply basic" {
     yTensor.data[3] = -2.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create multiply operation
-    var mul_op = try graph.multiply(x.node(), y.node());
+    var mul_op = try Multiply.init(allocator, x.node(), y.node());
     defer mul_op.deinit();
 
     // Evaluate forward pass
@@ -154,17 +153,16 @@ test "multiply basic" {
 
 test "multiply gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
     xTensor.data[2] = 0.0; // zero input
     xTensor.data[3] = 2.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -172,20 +170,20 @@ test "multiply gradient" {
     yTensor.data[3] = -2.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create multiply operation
-    var mul_op = try graph.multiply(x.node(), y.node());
+    var mul_op = try Multiply.init(allocator, x.node(), y.node());
     defer mul_op.deinit();
 
     // First evaluate to cache the values
     _ = try mul_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -223,19 +221,18 @@ test "multiply gradient" {
 
 test "multiply with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensors with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0]
         xTensor.data[1] = -1.0; // [0,1]
         xTensor.data[2] = 0.0; // [1,0]
         xTensor.data[3] = 2.0; // [1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 3.0; // [0,0]
         yTensor.data[1] = 0.0; // [0,1]
@@ -243,13 +240,13 @@ test "multiply with multiple shapes" {
         yTensor.data[3] = -2.0; // [1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create multiply operation
-        var mul_op = try graph.multiply(x.node(), y.node());
+        var mul_op = try Multiply.init(allocator, x.node(), y.node());
         defer mul_op.deinit();
 
         // Evaluate forward pass
@@ -269,7 +266,7 @@ test "multiply with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         gradTensor.data[0] = 1.0;
         gradTensor.data[1] = 1.0;
@@ -307,7 +304,7 @@ test "multiply with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensors with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0,0]
         xTensor.data[1] = -1.0; // [0,0,1]
@@ -318,7 +315,7 @@ test "multiply with multiple shapes" {
         xTensor.data[6] = 0.5; // [1,1,0]
         xTensor.data[7] = 1.5; // [1,1,1]
 
-        const yTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const yTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer yTensor.deinit();
         yTensor.data[0] = 3.0; // [0,0,0]
         yTensor.data[1] = 0.0; // [0,0,1]
@@ -330,13 +327,13 @@ test "multiply with multiple shapes" {
         yTensor.data[7] = -3.0; // [1,1,1]
 
         // Create variables
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
-        var y = try graph.variable("y", yTensor);
+        var y = try Variable.init(allocator, "y", yTensor);
         defer y.deinit();
 
         // Create multiply operation
-        var mul_op = try graph.multiply(x.node(), y.node());
+        var mul_op = try Multiply.init(allocator, x.node(), y.node());
         defer mul_op.deinit();
 
         // Evaluate forward pass
@@ -360,7 +357,7 @@ test "multiply with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -405,17 +402,16 @@ test "multiply with multiple shapes" {
 
 test "multiply reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensors with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
     xTensor.data[2] = 0.0; // zero input
     xTensor.data[3] = 2.0; // positive input
 
-    const yTensor = try graph.tensor(&[_]usize{4});
+    const yTensor = try Tensor.init(allocator, &[_]usize{4});
     defer yTensor.deinit();
     yTensor.data[0] = 3.0; // positive input
     yTensor.data[1] = 0.0; // zero input
@@ -423,13 +419,13 @@ test "multiply reset" {
     yTensor.data[3] = -2.0; // negative input
 
     // Create variables
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
-    var y = try graph.variable("y", yTensor);
+    var y = try Variable.init(allocator, "y", yTensor);
     defer y.deinit();
 
     // Create multiply operation
-    var mul_op = try graph.multiply(x.node(), y.node());
+    var mul_op = try Multiply.init(allocator, x.node(), y.node());
     defer mul_op.deinit();
 
     // First evaluation

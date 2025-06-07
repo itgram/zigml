@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Linear function node.
 /// The Linear node represents a linear transformation of the input tensor.
@@ -91,10 +91,9 @@ pub const Linear = struct {
 
 test "linear basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -102,11 +101,11 @@ test "linear basic" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create linear operation
-    var linear_op = try graph.linear(x.node());
+    var linear_op = try Linear.init(allocator, x.node());
     defer linear_op.deinit();
 
     // Evaluate forward pass
@@ -128,10 +127,9 @@ test "linear basic" {
 
 test "linear gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -139,18 +137,18 @@ test "linear gradient" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create linear operation
-    var linear_op = try graph.linear(x.node());
+    var linear_op = try Linear.init(allocator, x.node());
     defer linear_op.deinit();
 
     // First evaluate to cache the values
     _ = try linear_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -176,12 +174,11 @@ test "linear gradient" {
 
 test "linear with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensor with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0]
         xTensor.data[1] = -1.0; // [0,1]
@@ -189,11 +186,11 @@ test "linear with multiple shapes" {
         xTensor.data[3] = 1.0; // [1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create linear operation
-        var linear_op = try graph.linear(x.node());
+        var linear_op = try Linear.init(allocator, x.node());
         defer linear_op.deinit();
 
         // Evaluate forward pass
@@ -213,7 +210,7 @@ test "linear with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         gradTensor.data[0] = 1.0;
         gradTensor.data[1] = 1.0;
@@ -239,7 +236,7 @@ test "linear with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensor with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0,0]
         xTensor.data[1] = -1.0; // [0,0,1]
@@ -251,11 +248,11 @@ test "linear with multiple shapes" {
         xTensor.data[7] = 1.5; // [1,1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create linear operation
-        var linear_op = try graph.linear(x.node());
+        var linear_op = try Linear.init(allocator, x.node());
         defer linear_op.deinit();
 
         // Evaluate forward pass
@@ -279,7 +276,7 @@ test "linear with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -308,10 +305,9 @@ test "linear with multiple shapes" {
 
 test "linear reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -319,11 +315,11 @@ test "linear reset" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create linear operation
-    var linear_op = try graph.linear(x.node());
+    var linear_op = try Linear.init(allocator, x.node());
     defer linear_op.deinit();
 
     // First evaluation

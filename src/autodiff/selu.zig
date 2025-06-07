@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// SELU function node.
 /// The Scaled Exponential Linear Unit (SELU) activation function.
@@ -102,14 +102,13 @@ pub const SELU = struct {
 
 test "selu basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Default SELU parameters
     const default_alpha = 1.6732632423543772848170429916717;
     const default_lambda = 1.0507009873554804934193349852946;
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -117,11 +116,11 @@ test "selu basic" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create selu operation with default parameters
-    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    var selu_op = try SELU.init(allocator, x.node(), default_alpha, default_lambda);
     defer selu_op.deinit();
 
     // Evaluate forward pass
@@ -144,14 +143,13 @@ test "selu basic" {
 
 test "selu gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Default SELU parameters
     const default_alpha = 1.6732632423543772848170429916717;
     const default_lambda = 1.0507009873554804934193349852946;
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -159,18 +157,18 @@ test "selu gradient" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create selu operation with default parameters
-    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    var selu_op = try SELU.init(allocator, x.node(), default_alpha, default_lambda);
     defer selu_op.deinit();
 
     // First evaluate to cache the values
     _ = try selu_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -197,14 +195,13 @@ test "selu gradient" {
 
 test "selu with 2d shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Default SELU parameters
     const default_alpha = 1.6732632423543772848170429916717;
     const default_lambda = 1.0507009873554804934193349852946;
 
     // Create input tensor with shape [2, 2]
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // [0,0]
     xTensor.data[1] = -1.0; // [0,1]
@@ -212,11 +209,11 @@ test "selu with 2d shapes" {
     xTensor.data[3] = 1.0; // [1,1]
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create selu operation with default parameters
-    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    var selu_op = try SELU.init(allocator, x.node(), default_alpha, default_lambda);
     defer selu_op.deinit();
 
     // Evaluate forward pass
@@ -237,7 +234,7 @@ test "selu with 2d shapes" {
     }
 
     // Test gradient computation
-    const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -263,14 +260,13 @@ test "selu with 2d shapes" {
 
 test "selu reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Default SELU parameters
     const default_alpha = 1.6732632423543772848170429916717;
     const default_lambda = 1.0507009873554804934193349852946;
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -278,11 +274,11 @@ test "selu reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create selu operation with default parameters
-    var selu_op = try graph.selu(x.node(), default_alpha, default_lambda);
+    var selu_op = try SELU.init(allocator, x.node(), default_alpha, default_lambda);
     defer selu_op.deinit();
 
     // First evaluation
@@ -321,10 +317,9 @@ test "selu reset" {
 
 test "selu custom parameters" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // negative input
     xTensor.data[1] = -1.0; // negative input
@@ -332,13 +327,13 @@ test "selu custom parameters" {
     xTensor.data[3] = 1.0; // positive input
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create selu operation with custom parameters
     const custom_alpha = 2.0;
     const custom_lambda = 1.5;
-    var selu_op = try graph.selu(x.node(), custom_alpha, custom_lambda);
+    var selu_op = try SELU.init(allocator, x.node(), custom_alpha, custom_lambda);
     defer selu_op.deinit();
 
     // Evaluate forward pass
@@ -361,7 +356,7 @@ test "selu custom parameters" {
     }
 
     // Test gradient computation
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;

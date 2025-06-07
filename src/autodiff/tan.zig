@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Tan function node.
 /// The Tan node represents the tangent function applied to a tensor.
@@ -99,10 +99,9 @@ pub const Tan = struct {
 
 test "tan basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -110,11 +109,11 @@ test "tan basic" {
     xTensor.data[3] = std.math.pi / 6.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tan operation
-    var tan_op = try graph.tan(x.node());
+    var tan_op = try Tan.init(allocator, x.node());
     defer tan_op.deinit();
 
     // Evaluate
@@ -133,10 +132,9 @@ test "tan basic" {
 
 test "tan gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -144,15 +142,15 @@ test "tan gradient" {
     xTensor.data[3] = std.math.pi / 6.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tan operation
-    var tan_op = try graph.tan(x.node());
+    var tan_op = try Tan.init(allocator, x.node());
     defer tan_op.deinit();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -177,10 +175,9 @@ test "tan gradient" {
 
 test "tan with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -188,11 +185,11 @@ test "tan with different shapes" {
     xTensor.data[3] = std.math.pi / 6.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tan operation
-    var tan_op = try graph.tan(x.node());
+    var tan_op = try Tan.init(allocator, x.node());
     defer tan_op.deinit();
 
     // Evaluate
@@ -211,10 +208,9 @@ test "tan with different shapes" {
 
 test "tan reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 0.0;
     xTensor.data[1] = std.math.pi / 4.0;
@@ -222,11 +218,11 @@ test "tan reset" {
     xTensor.data[3] = std.math.pi / 6.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create tan operation
-    var tan_op = try graph.tan(x.node());
+    var tan_op = try Tan.init(allocator, x.node());
     defer tan_op.deinit();
 
     // First evaluation

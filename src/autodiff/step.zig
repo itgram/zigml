@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Step function node.
 /// where threshold is a configurable value (default is 0.0).
@@ -97,10 +97,9 @@ pub const Step = struct {
 
 test "step basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // below threshold
     xTensor.data[1] = -1.0; // below threshold
@@ -110,11 +109,11 @@ test "step basic" {
     xTensor.data[5] = 1.0; // above threshold
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create step operation with default threshold (0.0)
-    var step_op = try graph.step(x.node(), 0.0);
+    var step_op = try Step.init(allocator, x.node(), 0.0);
     defer step_op.deinit();
 
     // Evaluate forward pass
@@ -141,10 +140,9 @@ test "step basic" {
 
 test "step with custom threshold" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // below threshold
     xTensor.data[1] = -1.0; // below threshold
@@ -154,11 +152,11 @@ test "step with custom threshold" {
     xTensor.data[5] = 1.0; // above threshold
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create step operation with custom threshold (0.5)
-    var step_op = try graph.step(x.node(), 0.5);
+    var step_op = try Step.init(allocator, x.node(), 0.5);
     defer step_op.deinit();
 
     // Evaluate forward pass
@@ -182,10 +180,9 @@ test "step with custom threshold" {
 
 test "step gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{6});
+    const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0; // below threshold
     xTensor.data[1] = -1.0; // below threshold
@@ -195,18 +192,18 @@ test "step gradient" {
     xTensor.data[5] = 1.0; // above threshold
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create step operation
-    var step_op = try graph.step(x.node(), 0.0);
+    var step_op = try Step.init(allocator, x.node(), 0.0);
     defer step_op.deinit();
 
     // First evaluate to cache the values
     _ = try step_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{6});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{6});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;
@@ -233,12 +230,11 @@ test "step gradient" {
 
 test "step with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 2]
     {
         // Create input tensor with shape [2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -1.0; // [0,0]
         xTensor.data[1] = 0.0; // [0,1]
@@ -246,11 +242,11 @@ test "step with multiple shapes" {
         xTensor.data[3] = 1.0; // [1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create step operation
-        var step_op = try graph.step(x.node(), 0.0);
+        var step_op = try Step.init(allocator, x.node(), 0.0);
         defer step_op.deinit();
 
         // Evaluate forward pass
@@ -270,7 +266,7 @@ test "step with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -295,7 +291,7 @@ test "step with multiple shapes" {
     // Test 2: 3D shape [2, 2, 2]
     {
         // Create input tensor with shape [2, 2, 2]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
         xTensor.data[0] = -2.0; // [0,0,0]
         xTensor.data[1] = -1.0; // [0,0,1]
@@ -307,11 +303,11 @@ test "step with multiple shapes" {
         xTensor.data[7] = 2.5; // [1,1,1]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create step operation
-        var step_op = try graph.step(x.node(), 0.0);
+        var step_op = try Step.init(allocator, x.node(), 0.0);
         defer step_op.deinit();
 
         // Evaluate forward pass
@@ -335,7 +331,7 @@ test "step with multiple shapes" {
         }
 
         // Test gradient computation
-        const gradTensor = try graph.tensor(&[_]usize{ 2, 2, 2 });
+        const gradTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer gradTensor.deinit();
         for (gradTensor.data) |*v| {
             v.* = 1.0;
@@ -364,10 +360,9 @@ test "step with multiple shapes" {
 
 test "step reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -1.0; // below threshold
     xTensor.data[1] = 0.0; // at threshold
@@ -375,11 +370,11 @@ test "step reset" {
     xTensor.data[3] = 1.0; // above threshold
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create step operation
-    var step_op = try graph.step(x.node(), 0.0);
+    var step_op = try Step.init(allocator, x.node(), 0.0);
     defer step_op.deinit();
 
     // First evaluation

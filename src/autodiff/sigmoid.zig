@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Sigmoid function node.
 /// The Sigmoid function is defined as:
@@ -94,10 +94,9 @@ pub const Sigmoid = struct {
 
 test "sigmoid basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -105,11 +104,11 @@ test "sigmoid basic" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sigmoid operation
-    var sigmoid_op = try graph.sigmoid(x.node());
+    var sigmoid_op = try Sigmoid.init(allocator, x.node());
     defer sigmoid_op.deinit();
 
     // First evaluate to cache the values
@@ -128,10 +127,9 @@ test "sigmoid basic" {
 
 test "sigmoid gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -139,11 +137,11 @@ test "sigmoid gradient" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sigmoid operation
-    var sigmoid_op = try graph.sigmoid(x.node());
+    var sigmoid_op = try Sigmoid.init(allocator, x.node());
     defer sigmoid_op.deinit();
 
     // First evaluate to cache the values
@@ -160,7 +158,7 @@ test "sigmoid gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -185,10 +183,9 @@ test "sigmoid gradient" {
 
 test "sigmoid with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -196,11 +193,11 @@ test "sigmoid with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sigmoid operation
-    var sigmoid_op = try graph.sigmoid(x.node());
+    var sigmoid_op = try Sigmoid.init(allocator, x.node());
     defer sigmoid_op.deinit();
 
     // Evaluate
@@ -219,10 +216,9 @@ test "sigmoid with different shapes" {
 
 test "sigmoid reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -230,11 +226,11 @@ test "sigmoid reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create sigmoid operation
-    var sigmoid_op = try graph.sigmoid(x.node());
+    var sigmoid_op = try Sigmoid.init(allocator, x.node());
     defer sigmoid_op.deinit();
 
     // First evaluation

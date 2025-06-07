@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Exponential Linear Unit (ELU) activation function node.
 /// The ELU function is used in neural networks to introduce non-linearity.
@@ -98,19 +98,18 @@ pub const ELU = struct {
 
 test "elu basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0;
     xTensor.data[1] = 0.0;
     xTensor.data[2] = -1.0;
     xTensor.data[3] = -2.0;
 
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
-    var elu_op = try graph.elu(x.node(), 0.01);
+    var elu_op = try ELU.init(allocator, x.node(), 0.01);
     defer elu_op.deinit();
 
     const result = try elu_op.eval();
@@ -127,18 +126,17 @@ test "elu basic" {
 
 test "elu gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
-    const xTensor = try graph.tensor(&[_]usize{3});
+    const xTensor = try Tensor.init(allocator, &[_]usize{3});
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = 0.0;
     xTensor.data[2] = -1.0;
 
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
-    var elu_op = try graph.elu(x.node(), 0.01);
+    var elu_op = try ELU.init(allocator, x.node(), 0.01);
     defer elu_op.deinit();
 
     const result = try elu_op.eval();
@@ -152,7 +150,7 @@ test "elu gradient" {
     }
 
     // Gradient wrt output
-    const gradTensor = try graph.tensor(&[_]usize{3});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{3});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -175,17 +173,16 @@ test "elu gradient" {
 
 test "elu custom alpha" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
-    const xTensor = try graph.tensor(&[_]usize{2});
+    const xTensor = try Tensor.init(allocator, &[_]usize{2});
     defer xTensor.deinit();
     xTensor.data[0] = -1.0;
     xTensor.data[1] = 2.0;
 
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
-    var elu_op = try graph.elu(x.node(), 0.5);
+    var elu_op = try ELU.init(allocator, x.node(), 0.5);
     defer elu_op.deinit();
 
     const result = try elu_op.eval();
@@ -200,17 +197,16 @@ test "elu custom alpha" {
 
 test "elu reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
-    const xTensor = try graph.tensor(&[_]usize{2});
+    const xTensor = try Tensor.init(allocator, &[_]usize{2});
     defer xTensor.deinit();
     xTensor.data[0] = 1.0;
     xTensor.data[1] = -1.0;
 
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
-    var elu_op = try graph.elu(x.node(), 0.01);
+    var elu_op = try ELU.init(allocator, x.node(), 0.01);
     defer elu_op.deinit();
 
     const result1 = try elu_op.eval();

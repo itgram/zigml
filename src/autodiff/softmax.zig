@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Softmax function node.
 /// The Softmax function is commonly used in neural networks, especially in the output layer for multi-class classification tasks.
@@ -151,10 +151,9 @@ pub const Softmax = struct {
 
 test "softmax basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // high value
     xTensor.data[1] = 1.0; // medium value
@@ -162,11 +161,11 @@ test "softmax basic" {
     xTensor.data[3] = -1.0; // negative value
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create softmax operation along axis 0
-    var softmax_op = try graph.softmax(x.node(), 0);
+    var softmax_op = try Softmax.init(allocator, x.node(), 0);
     defer softmax_op.deinit();
 
     // Evaluate forward pass
@@ -209,28 +208,27 @@ test "softmax basic" {
 
 test "softmax gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{3});
+    const xTensor = try Tensor.init(allocator, &[_]usize{3});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // high value
     xTensor.data[1] = 1.0; // medium value
     xTensor.data[2] = 0.0; // zero value
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create softmax operation
-    var softmax_op = try graph.softmax(x.node(), 0);
+    var softmax_op = try Softmax.init(allocator, x.node(), 0);
     defer softmax_op.deinit();
 
     // First evaluate to cache the values
     const result = try softmax_op.eval();
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{3});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{3});
     defer gradTensor.deinit();
     for (gradTensor.data) |*v| {
         v.* = 1.0;
@@ -255,12 +253,11 @@ test "softmax gradient" {
 
 test "softmax with multiple shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Test 1: 2D shape [2, 3] with axis 0
     {
         // Create input tensor with shape [2, 3]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 3 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
         defer xTensor.deinit();
         xTensor.data[0] = 2.0; // [0,0]
         xTensor.data[1] = 1.0; // [0,1]
@@ -270,11 +267,11 @@ test "softmax with multiple shapes" {
         xTensor.data[5] = -1.0; // [1,2]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create softmax operation along axis 0
-        var softmax_op = try graph.softmax(x.node(), 0);
+        var softmax_op = try Softmax.init(allocator, x.node(), 0);
         defer softmax_op.deinit();
 
         // Evaluate forward pass
@@ -318,7 +315,7 @@ test "softmax with multiple shapes" {
     // Test 2: 2D shape [2, 3] with axis 1
     {
         // Create input tensor with shape [2, 3]
-        const xTensor = try graph.tensor(&[_]usize{ 2, 3 });
+        const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
         defer xTensor.deinit();
         xTensor.data[0] = 2.0; // [0,0]
         xTensor.data[1] = 1.0; // [0,1]
@@ -328,11 +325,11 @@ test "softmax with multiple shapes" {
         xTensor.data[5] = -1.0; // [1,2]
 
         // Create variable
-        var x = try graph.variable("x", xTensor);
+        var x = try Variable.init(allocator, "x", xTensor);
         defer x.deinit();
 
         // Create softmax operation along axis 1
-        var softmax_op = try graph.softmax(x.node(), 1);
+        var softmax_op = try Softmax.init(allocator, x.node(), 1);
         defer softmax_op.deinit();
 
         // Evaluate forward pass
@@ -376,21 +373,20 @@ test "softmax with multiple shapes" {
 
 test "softmax reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with test values
-    const xTensor = try graph.tensor(&[_]usize{3});
+    const xTensor = try Tensor.init(allocator, &[_]usize{3});
     defer xTensor.deinit();
     xTensor.data[0] = 2.0; // high value
     xTensor.data[1] = 1.0; // medium value
     xTensor.data[2] = 0.0; // zero value
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create softmax operation
-    var softmax_op = try graph.softmax(x.node(), 0);
+    var softmax_op = try Softmax.init(allocator, x.node(), 0);
     defer softmax_op.deinit();
 
     // First evaluation
@@ -435,21 +431,20 @@ test "softmax reset" {
 
 test "softmax numerical stability" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor with large values that could cause overflow
-    const xTensor = try graph.tensor(&[_]usize{3});
+    const xTensor = try Tensor.init(allocator, &[_]usize{3});
     defer xTensor.deinit();
     xTensor.data[0] = 1000.0; // very large value
     xTensor.data[1] = 1001.0; // very large value
     xTensor.data[2] = 1002.0; // very large value
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create softmax operation
-    var softmax_op = try graph.softmax(x.node(), 0);
+    var softmax_op = try Softmax.init(allocator, x.node(), 0);
     defer softmax_op.deinit();
 
     // Evaluate forward pass

@@ -2,7 +2,7 @@ const std = @import("std");
 const math = @import("std").math;
 const Node = @import("node.zig").Node;
 const Tensor = @import("tensor.zig").Tensor;
-const Graph = @import("graph.zig").Graph;
+const Variable = @import("variable.zig").Variable;
 
 /// Swish function node.
 /// The Swish function is a smooth, non-monotonic activation function.
@@ -101,10 +101,9 @@ pub const Swish = struct {
 
 test "swish basic" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -112,11 +111,11 @@ test "swish basic" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create swish operation
-    var swish_op = try graph.swish(x.node());
+    var swish_op = try Swish.init(allocator, x.node());
     defer swish_op.deinit();
 
     // First evaluate to cache the values
@@ -135,10 +134,9 @@ test "swish basic" {
 
 test "swish gradient" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -146,11 +144,11 @@ test "swish gradient" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create swish operation
-    var swish_op = try graph.swish(x.node());
+    var swish_op = try Swish.init(allocator, x.node());
     defer swish_op.deinit();
 
     // First evaluate to cache the values
@@ -167,7 +165,7 @@ test "swish gradient" {
     }
 
     // Create gradient tensor
-    const gradTensor = try graph.tensor(&[_]usize{4});
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
     defer gradTensor.deinit();
     gradTensor.data[0] = 1.0;
     gradTensor.data[1] = 1.0;
@@ -192,10 +190,9 @@ test "swish gradient" {
 
 test "swish with different shapes" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{ 2, 2 });
+    const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -203,11 +200,11 @@ test "swish with different shapes" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create swish operation
-    var swish_op = try graph.swish(x.node());
+    var swish_op = try Swish.init(allocator, x.node());
     defer swish_op.deinit();
 
     // Evaluate
@@ -226,10 +223,9 @@ test "swish with different shapes" {
 
 test "swish reset" {
     const allocator = std.testing.allocator;
-    var graph = Graph.init(allocator);
 
     // Create input tensor
-    const xTensor = try graph.tensor(&[_]usize{4});
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
     xTensor.data[0] = -2.0;
     xTensor.data[1] = -1.0;
@@ -237,11 +233,11 @@ test "swish reset" {
     xTensor.data[3] = 1.0;
 
     // Create variable
-    var x = try graph.variable("x", xTensor);
+    var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
     // Create swish operation
-    var swish_op = try graph.swish(x.node());
+    var swish_op = try Swish.init(allocator, x.node());
     defer swish_op.deinit();
 
     // First evaluation
