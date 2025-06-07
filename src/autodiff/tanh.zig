@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Tanh function node.
 /// The Tanh (hyperbolic tangent) function.
@@ -56,7 +56,7 @@ pub const Tanh = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.tanh(xv);
+            v.* = std.math.tanh(xv);
         }
 
         return self.value.?;

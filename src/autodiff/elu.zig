@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Exponential Linear Unit (ELU) activation function node.
 /// The ELU function is used in neural networks to introduce non-linearity.
@@ -56,7 +56,7 @@ pub const ELU = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv > 0) xv else self.alpha * (math.exp(xv) - 1.0);
+            v.* = if (xv > 0) xv else self.alpha * (std.math.exp(xv) - 1.0);
         }
 
         return self.value.?;

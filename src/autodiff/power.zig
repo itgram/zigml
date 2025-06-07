@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = std.math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 const epsilon = 1e-7; // Small value to prevent log(0), matching PyTorch's implementation
 
@@ -57,7 +57,7 @@ pub const Power = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data, y.data) |*v, xv, yv| {
-            v.* = math.pow(f64, xv + epsilon, yv);
+            v.* = std.math.pow(f64, xv + epsilon, yv);
         }
 
         return self.value.?;
@@ -79,8 +79,8 @@ pub const Power = struct {
         defer grad_y.deinit();
 
         for (grad_x.data, grad_y.data, x.data, y.data, dval.data) |*gx, *gy, xv, yv, dv| {
-            gx.* = dv * yv * math.pow(f64, xv + epsilon, yv - 1);
-            gy.* = dv * math.pow(f64, xv + epsilon, yv) * @log(xv + epsilon);
+            gx.* = dv * yv * std.math.pow(f64, xv + epsilon, yv - 1);
+            gy.* = dv * std.math.pow(f64, xv + epsilon, yv) * @log(xv + epsilon);
         }
 
         try self.x.diff(grad_x);
@@ -138,10 +138,10 @@ test "power basic" {
     // Expected values for each input pair:
     // f(x, y) = (x + epsilon)^y
     const expected = [_]f64{
-        math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
-        math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
-        math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
-        math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
+        std.math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
+        std.math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
+        std.math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
+        std.math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
     };
 
     for (result.data, expected) |actual, exp| {
@@ -198,17 +198,17 @@ test "power gradient" {
     // ∂f/∂x = y * (x + epsilon)^(y-1)
     // ∂f/∂y = (x + epsilon)^y * ln(x + epsilon)
     const expected_x_grad = [_]f64{
-        2.0 * math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
-        0.0 * math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
-        -1.0 * math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
-        0.5 * math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
+        2.0 * std.math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
+        0.0 * std.math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
+        -1.0 * std.math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
+        0.5 * std.math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
     };
 
     const expected_y_grad = [_]f64{
-        math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
-        math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
-        math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
-        math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
+        std.math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
+        std.math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
+        std.math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
+        std.math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
     };
 
     for (x.grad.data, expected_x_grad) |actual, exp| {
@@ -256,10 +256,10 @@ test "power with multiple shapes" {
         // Expected values for each input pair:
         // f(x, y) = (x + epsilon)^y
         const expected = [_]f64{
-            math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
-            math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
-            math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
-            math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
+            std.math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
+            std.math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
+            std.math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
+            std.math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
         };
 
         for (result.data, expected) |actual, exp| {
@@ -280,17 +280,17 @@ test "power with multiple shapes" {
         // ∂f/∂x = y * (x + epsilon)^(y-1)
         // ∂f/∂y = (x + epsilon)^y * ln(x + epsilon)
         const expected_x_grad = [_]f64{
-            2.0 * math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
-            0.0 * math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
-            -1.0 * math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
-            0.5 * math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
+            2.0 * std.math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
+            0.0 * std.math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
+            -1.0 * std.math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
+            0.5 * std.math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
         };
 
         const expected_y_grad = [_]f64{
-            math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
-            math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
-            math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
-            math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
+            std.math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
+            std.math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
+            std.math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
+            std.math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
         };
 
         for (x.grad.data, expected_x_grad) |actual, exp| {
@@ -343,14 +343,14 @@ test "power with multiple shapes" {
         // Expected values for each input pair:
         // f(x, y) = (x + epsilon)^y
         const expected = [_]f64{
-            math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
-            math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
-            math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
-            math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
-            math.pow(f64, 1.5 + 1e-7, -2.0), // (1.5 + 1e-7)^-2.0 ≈ 0.4444
-            math.pow(f64, 2.5 + 1e-7, 1.0), // (2.5 + 1e-7)^1.0 = 2.5
-            math.pow(f64, 3.5 + 1e-7, 2.0), // (3.5 + 1e-7)^2.0 = 12.25
-            math.pow(f64, 4.5 + 1e-7, 0.5), // (4.5 + 1e-7)^0.5 ≈ 2.1213
+            std.math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
+            std.math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
+            std.math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
+            std.math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
+            std.math.pow(f64, 1.5 + 1e-7, -2.0), // (1.5 + 1e-7)^-2.0 ≈ 0.4444
+            std.math.pow(f64, 2.5 + 1e-7, 1.0), // (2.5 + 1e-7)^1.0 = 2.5
+            std.math.pow(f64, 3.5 + 1e-7, 2.0), // (3.5 + 1e-7)^2.0 = 12.25
+            std.math.pow(f64, 4.5 + 1e-7, 0.5), // (4.5 + 1e-7)^0.5 ≈ 2.1213
         };
 
         for (result.data, expected) |actual, exp| {
@@ -370,25 +370,25 @@ test "power with multiple shapes" {
         // ∂f/∂x = y * (x + epsilon)^(y-1)
         // ∂f/∂y = (x + epsilon)^y * ln(x + epsilon)
         const expected_x_grad = [_]f64{
-            2.0 * math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
-            0.0 * math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
-            -1.0 * math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
-            0.5 * math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
-            -2.0 * math.pow(f64, 1.5 + 1e-7, -3.0), // -2.0 * (1.5 + 1e-7)^-3.0 ≈ -0.5926
-            1.0 * math.pow(f64, 2.5 + 1e-7, 0.0), // 1.0 * (2.5 + 1e-7)^0.0 = 1.0
-            2.0 * math.pow(f64, 3.5 + 1e-7, 1.0), // 2.0 * (3.5 + 1e-7)^1.0 = 7.0
-            0.5 * math.pow(f64, 4.5 + 1e-7, -0.5), // 0.5 * (4.5 + 1e-7)^-0.5 ≈ 0.2357
+            2.0 * std.math.pow(f64, 2.0 + 1e-7, 1.0), // 2.0 * (2.0 + 1e-7)^1.0 = 4.0
+            0.0 * std.math.pow(f64, 3.0 + 1e-7, -1.0), // 0.0 * (3.0 + 1e-7)^-1.0 = 0.0
+            -1.0 * std.math.pow(f64, 0.5 + 1e-7, -2.0), // -1.0 * (0.5 + 1e-7)^-2.0 = -4.0
+            0.5 * std.math.pow(f64, 4.0 + 1e-7, -0.5), // 0.5 * (4.0 + 1e-7)^-0.5 = 0.25
+            -2.0 * std.math.pow(f64, 1.5 + 1e-7, -3.0), // -2.0 * (1.5 + 1e-7)^-3.0 ≈ -0.5926
+            1.0 * std.math.pow(f64, 2.5 + 1e-7, 0.0), // 1.0 * (2.5 + 1e-7)^0.0 = 1.0
+            2.0 * std.math.pow(f64, 3.5 + 1e-7, 1.0), // 2.0 * (3.5 + 1e-7)^1.0 = 7.0
+            0.5 * std.math.pow(f64, 4.5 + 1e-7, -0.5), // 0.5 * (4.5 + 1e-7)^-0.5 ≈ 0.2357
         };
 
         const expected_y_grad = [_]f64{
-            math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
-            math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
-            math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
-            math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
-            math.pow(f64, 1.5 + 1e-7, -2.0) * @log(1.5 + 1e-7), // (1.5 + 1e-7)^-2.0 * ln(1.5 + 1e-7) ≈ -0.4055
-            math.pow(f64, 2.5 + 1e-7, 1.0) * @log(2.5 + 1e-7), // (2.5 + 1e-7)^1.0 * ln(2.5 + 1e-7) ≈ 2.2907
-            math.pow(f64, 3.5 + 1e-7, 2.0) * @log(3.5 + 1e-7), // (3.5 + 1e-7)^2.0 * ln(3.5 + 1e-7) ≈ 15.7526
-            math.pow(f64, 4.5 + 1e-7, 0.5) * @log(4.5 + 1e-7), // (4.5 + 1e-7)^0.5 * ln(4.5 + 1e-7) ≈ 3.2958
+            std.math.pow(f64, 2.0 + 1e-7, 2.0) * @log(2.0 + 1e-7), // (2.0 + 1e-7)^2.0 * ln(2.0 + 1e-7) ≈ 2.7726
+            std.math.pow(f64, 3.0 + 1e-7, 0.0) * @log(3.0 + 1e-7), // (3.0 + 1e-7)^0.0 * ln(3.0 + 1e-7) ≈ 1.0986
+            std.math.pow(f64, 0.5 + 1e-7, -1.0) * @log(0.5 + 1e-7), // (0.5 + 1e-7)^-1.0 * ln(0.5 + 1e-7) ≈ -1.3863
+            std.math.pow(f64, 4.0 + 1e-7, 0.5) * @log(4.0 + 1e-7), // (4.0 + 1e-7)^0.5 * ln(4.0 + 1e-7) ≈ 2.7726
+            std.math.pow(f64, 1.5 + 1e-7, -2.0) * @log(1.5 + 1e-7), // (1.5 + 1e-7)^-2.0 * ln(1.5 + 1e-7) ≈ -0.4055
+            std.math.pow(f64, 2.5 + 1e-7, 1.0) * @log(2.5 + 1e-7), // (2.5 + 1e-7)^1.0 * ln(2.5 + 1e-7) ≈ 2.2907
+            std.math.pow(f64, 3.5 + 1e-7, 2.0) * @log(3.5 + 1e-7), // (3.5 + 1e-7)^2.0 * ln(3.5 + 1e-7) ≈ 15.7526
+            std.math.pow(f64, 4.5 + 1e-7, 0.5) * @log(4.5 + 1e-7), // (4.5 + 1e-7)^0.5 * ln(4.5 + 1e-7) ≈ 3.2958
         };
 
         for (x.grad.data, expected_x_grad) |actual, exp| {
@@ -435,10 +435,10 @@ test "power reset" {
     // Expected values for each input pair:
     // f(x, y) = (x + epsilon)^y
     const expected1 = [_]f64{
-        math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
-        math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
-        math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
-        math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
+        std.math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
+        std.math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
+        std.math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
+        std.math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -451,10 +451,10 @@ test "power reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
-        math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
-        math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
-        math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
+        std.math.pow(f64, 2.0 + 1e-7, 2.0), // (2.0 + 1e-7)^2.0 = 4.0
+        std.math.pow(f64, 3.0 + 1e-7, 0.0), // (3.0 + 1e-7)^0.0 = 1.0
+        std.math.pow(f64, 0.5 + 1e-7, -1.0), // (0.5 + 1e-7)^-1.0 = 2.0
+        std.math.pow(f64, 4.0 + 1e-7, 0.5), // (4.0 + 1e-7)^0.5 = 2.0
     };
 
     for (result2.data, expected2) |actual, exp| {

@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// ReLU function node.
 /// The ReLU (Rectified Linear Unit) activation function

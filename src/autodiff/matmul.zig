@@ -1,7 +1,8 @@
 const std = @import("std");
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Matrix multiplication node.
 /// The MatMul node represents the matrix multiplication of two tensors.

@@ -1,6 +1,7 @@
 const std = @import("std");
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
 
 /// Variable node.
 /// The Variable node represents a variable in the computation graph.

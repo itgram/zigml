@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 const epsilon = 1e-7; // Small value to prevent log(0), matching PyTorch's implementation
 

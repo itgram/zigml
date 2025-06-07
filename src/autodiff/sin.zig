@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Sin function node.
 /// The Sin node represents the sine function applied to a tensor.
@@ -56,7 +56,7 @@ pub const Sin = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.sin(xv);
+            v.* = std.math.sin(xv);
         }
 
         return self.value.?;
@@ -74,7 +74,7 @@ pub const Sin = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            v.* = dv * math.cos(xv);
+            v.* = dv * std.math.cos(xv);
         }
 
         try self.x.diff(grad);
@@ -102,12 +102,12 @@ test "sin basic" {
     // Create input tensor with test values
     const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
-    xTensor.data[0] = -math.pi; // -π
-    xTensor.data[1] = -math.pi / 2.0; // -π/2
+    xTensor.data[0] = -std.math.pi; // -π
+    xTensor.data[1] = -std.math.pi / 2.0; // -π/2
     xTensor.data[2] = 0.0; // 0
-    xTensor.data[3] = math.pi / 2.0; // π/2
-    xTensor.data[4] = math.pi; // π
-    xTensor.data[5] = 2.0 * math.pi; // 2π
+    xTensor.data[3] = std.math.pi / 2.0; // π/2
+    xTensor.data[4] = std.math.pi; // π
+    xTensor.data[5] = 2.0 * std.math.pi; // 2π
 
     // Create variable
     var x = try Variable.init(allocator, "x", xTensor);
@@ -123,12 +123,12 @@ test "sin basic" {
     // Expected values for each input:
     // f(x) = sin(x)
     const expected = [_]f64{
-        math.sin(-math.pi), // sin(-π) = 0
-        math.sin(-math.pi / 2.0), // sin(-π/2) = -1
-        math.sin(0.0), // sin(0) = 0
-        math.sin(math.pi / 2.0), // sin(π/2) = 1
-        math.sin(math.pi), // sin(π) = 0
-        math.sin(2 * math.pi), // sin(2π) = 0
+        std.math.sin(-std.math.pi), // sin(-π) = 0
+        std.math.sin(-std.math.pi / 2.0), // sin(-π/2) = -1
+        std.math.sin(0.0), // sin(0) = 0
+        std.math.sin(std.math.pi / 2.0), // sin(π/2) = 1
+        std.math.sin(std.math.pi), // sin(π) = 0
+        std.math.sin(2 * std.math.pi), // sin(2π) = 0
     };
 
     for (result.data, expected) |actual, exp| {
@@ -145,12 +145,12 @@ test "sin gradient" {
     // Create input tensor with test values
     const xTensor = try Tensor.init(allocator, &[_]usize{6});
     defer xTensor.deinit();
-    xTensor.data[0] = -math.pi; // -π
-    xTensor.data[1] = -math.pi / 2.0; // -π/2
+    xTensor.data[0] = -std.math.pi; // -π
+    xTensor.data[1] = -std.math.pi / 2.0; // -π/2
     xTensor.data[2] = 0.0; // 0
-    xTensor.data[3] = math.pi / 2.0; // π/2
-    xTensor.data[4] = math.pi; // π
-    xTensor.data[5] = 2.0 * math.pi; // 2π
+    xTensor.data[3] = std.math.pi / 2.0; // π/2
+    xTensor.data[4] = std.math.pi; // π
+    xTensor.data[5] = 2.0 * std.math.pi; // 2π
 
     // Create variable
     var x = try Variable.init(allocator, "x", xTensor);
@@ -176,12 +176,12 @@ test "sin gradient" {
     // Expected gradients for each input:
     // ∂f/∂x = cos(x)
     const expected_grad = [_]f64{
-        math.cos(-math.pi), // cos(-π) = -1
-        math.cos(-math.pi / 2.0), // cos(-π/2) = 0
-        math.cos(0.0), // cos(0) = 1
-        math.cos(math.pi / 2.0), // cos(π/2) = 0
-        math.cos(math.pi), // cos(π) = -1
-        math.cos(2.0 * math.pi), // cos(2π) = 1
+        std.math.cos(-std.math.pi), // cos(-π) = -1
+        std.math.cos(-std.math.pi / 2.0), // cos(-π/2) = 0
+        std.math.cos(0.0), // cos(0) = 1
+        std.math.cos(std.math.pi / 2.0), // cos(π/2) = 0
+        std.math.cos(std.math.pi), // cos(π) = -1
+        std.math.cos(2.0 * std.math.pi), // cos(2π) = 1
     };
 
     for (x.grad.data, expected_grad) |actual, exp| {
@@ -197,10 +197,10 @@ test "sin with multiple shapes" {
         // Create input tensor with shape [2, 2]
         const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2 });
         defer xTensor.deinit();
-        xTensor.data[0] = -math.pi / 2.0; // [0,0]
+        xTensor.data[0] = -std.math.pi / 2.0; // [0,0]
         xTensor.data[1] = 0.0; // [0,1]
-        xTensor.data[2] = math.pi / 2.0; // [1,0]
-        xTensor.data[3] = math.pi; // [1,1]
+        xTensor.data[2] = std.math.pi / 2.0; // [1,0]
+        xTensor.data[3] = std.math.pi; // [1,1]
 
         // Create variable
         var x = try Variable.init(allocator, "x", xTensor);
@@ -216,10 +216,10 @@ test "sin with multiple shapes" {
         // Expected values for each input:
         // f(x) = sin(x)
         const expected = [_]f64{
-            math.sin(-math.pi / 2.0), // sin(-π/2) = -1
-            math.sin(0.0), // sin(0) = 0
-            math.sin(math.pi / 2.0), // sin(π/2) = 1
-            math.sin(math.pi), // sin(π) = 0
+            std.math.sin(-std.math.pi / 2.0), // sin(-π/2) = -1
+            std.math.sin(0.0), // sin(0) = 0
+            std.math.sin(std.math.pi / 2.0), // sin(π/2) = 1
+            std.math.sin(std.math.pi), // sin(π) = 0
         };
 
         for (result.data, expected) |actual, exp| {
@@ -238,10 +238,10 @@ test "sin with multiple shapes" {
         // Expected gradients for each position:
         // ∂f/∂x = cos(x)
         const expected_grad = [_]f64{
-            math.cos(-math.pi / 2.0), // cos(-π/2) = 0
-            math.cos(0.0), // cos(0) = 1
-            math.cos(math.pi / 2.0), // cos(π/2) = 0
-            math.cos(math.pi), // cos(π) = -1
+            std.math.cos(-std.math.pi / 2.0), // cos(-π/2) = 0
+            std.math.cos(0.0), // cos(0) = 1
+            std.math.cos(std.math.pi / 2.0), // cos(π/2) = 0
+            std.math.cos(std.math.pi), // cos(π) = -1
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -254,14 +254,14 @@ test "sin with multiple shapes" {
         // Create input tensor with shape [2, 2, 2]
         const xTensor = try Tensor.init(allocator, &[_]usize{ 2, 2, 2 });
         defer xTensor.deinit();
-        xTensor.data[0] = -math.pi; // [0,0,0]
-        xTensor.data[1] = -math.pi / 2.0; // [0,0,1]
+        xTensor.data[0] = -std.math.pi; // [0,0,0]
+        xTensor.data[1] = -std.math.pi / 2.0; // [0,0,1]
         xTensor.data[2] = 0.0; // [0,1,0]
-        xTensor.data[3] = math.pi / 2.0; // [0,1,1]
-        xTensor.data[4] = math.pi; // [1,0,0]
-        xTensor.data[5] = 3.0 * math.pi / 2.0; // [1,0,1]
-        xTensor.data[6] = 2.0 * math.pi; // [1,1,0]
-        xTensor.data[7] = 5.0 * math.pi / 2.0; // [1,1,1]
+        xTensor.data[3] = std.math.pi / 2.0; // [0,1,1]
+        xTensor.data[4] = std.math.pi; // [1,0,0]
+        xTensor.data[5] = 3.0 * std.math.pi / 2.0; // [1,0,1]
+        xTensor.data[6] = 2.0 * std.math.pi; // [1,1,0]
+        xTensor.data[7] = 5.0 * std.math.pi / 2.0; // [1,1,1]
 
         // Create variable
         var x = try Variable.init(allocator, "x", xTensor);
@@ -277,14 +277,14 @@ test "sin with multiple shapes" {
         // Expected values for each input:
         // f(x) = sin(x)
         const expected = [_]f64{
-            math.sin(-math.pi), // sin(-π) = 0
-            math.sin(-math.pi / 2.0), // sin(-π/2) = -1
-            math.sin(0.0), // sin(0) = 0
-            math.sin(math.pi / 2.0), // sin(π/2) = 1
-            math.sin(math.pi), // sin(π) = 0
-            math.sin(3.0 * math.pi / 2.0), // sin(3π/2) = -1
-            math.sin(2.0 * math.pi), // sin(2π) = 0
-            math.sin(5.0 * math.pi / 2.0), // sin(5π/2) = 1
+            std.math.sin(-std.math.pi), // sin(-π) = 0
+            std.math.sin(-std.math.pi / 2.0), // sin(-π/2) = -1
+            std.math.sin(0.0), // sin(0) = 0
+            std.math.sin(std.math.pi / 2.0), // sin(π/2) = 1
+            std.math.sin(std.math.pi), // sin(π) = 0
+            std.math.sin(3.0 * std.math.pi / 2.0), // sin(3π/2) = -1
+            std.math.sin(2.0 * std.math.pi), // sin(2π) = 0
+            std.math.sin(5.0 * std.math.pi / 2.0), // sin(5π/2) = 1
         };
 
         for (result.data, expected) |actual, exp| {
@@ -303,14 +303,14 @@ test "sin with multiple shapes" {
         // Expected gradients for each position:
         // ∂f/∂x = cos(x)
         const expected_grad = [_]f64{
-            math.cos(-math.pi), // cos(-π) = -1
-            math.cos(-math.pi / 2.0), // cos(-π/2) = 0
-            math.cos(0.0), // cos(0) = 1
-            math.cos(math.pi / 2.0), // cos(π/2) = 0
-            math.cos(math.pi), // cos(π) = -1
-            math.cos(3.0 * math.pi / 2.0), // cos(3π/2) = 0
-            math.cos(2.0 * math.pi), // cos(2π) = 1
-            math.cos(5.0 * math.pi / 2.0), // cos(5π/2) = 0
+            std.math.cos(-std.math.pi), // cos(-π) = -1
+            std.math.cos(-std.math.pi / 2.0), // cos(-π/2) = 0
+            std.math.cos(0.0), // cos(0) = 1
+            std.math.cos(std.math.pi / 2.0), // cos(π/2) = 0
+            std.math.cos(std.math.pi), // cos(π) = -1
+            std.math.cos(3.0 * std.math.pi / 2.0), // cos(3π/2) = 0
+            std.math.cos(2.0 * std.math.pi), // cos(2π) = 1
+            std.math.cos(5.0 * std.math.pi / 2.0), // cos(5π/2) = 0
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -325,10 +325,10 @@ test "sin reset" {
     // Create input tensor with test values
     const xTensor = try Tensor.init(allocator, &[_]usize{4});
     defer xTensor.deinit();
-    xTensor.data[0] = -math.pi / 2.0; // -π/2
+    xTensor.data[0] = -std.math.pi / 2.0; // -π/2
     xTensor.data[1] = 0.0; // 0
-    xTensor.data[2] = math.pi / 2.0; // π/2
-    xTensor.data[3] = math.pi; // π
+    xTensor.data[2] = std.math.pi / 2.0; // π/2
+    xTensor.data[3] = std.math.pi; // π
 
     // Create variable
     var x = try Variable.init(allocator, "x", xTensor);
@@ -344,10 +344,10 @@ test "sin reset" {
     // Expected values for each input:
     // f(x) = sin(x)
     const expected1 = [_]f64{
-        math.sin(-math.pi / 2.0), // sin(-π/2) = -1
-        math.sin(0.0), // sin(0) = 0
-        math.sin(math.pi / 2.0), // sin(π/2) = 1
-        math.sin(math.pi), // sin(π) = 0
+        std.math.sin(-std.math.pi / 2.0), // sin(-π/2) = -1
+        std.math.sin(0.0), // sin(0) = 0
+        std.math.sin(std.math.pi / 2.0), // sin(π/2) = 1
+        std.math.sin(std.math.pi), // sin(π) = 0
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -360,10 +360,10 @@ test "sin reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        math.sin(-math.pi / 2.0), // sin(-π/2) = -1
-        math.sin(0.0), // sin(0) = 0
-        math.sin(math.pi / 2.0), // sin(π/2) = 1
-        math.sin(math.pi), // sin(π) = 0
+        std.math.sin(-std.math.pi / 2.0), // sin(-π/2) = -1
+        std.math.sin(0.0), // sin(0) = 0
+        std.math.sin(std.math.pi / 2.0), // sin(π/2) = 1
+        std.math.sin(std.math.pi), // sin(π) = 0
     };
 
     for (result2.data, expected2) |actual, exp| {

@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 const epsilon = 1e-12; // Small value to prevent log(0), matching PyTorch's CCE implementation
 
@@ -73,7 +73,7 @@ pub const SoftmaxCCE = struct {
                 var sumExp: f64 = 0;
                 for (0..axis_dim) |i| {
                     const idx = base + i * inner;
-                    sumExp += math.exp(x.data[idx] - maxVal);
+                    sumExp += std.math.exp(x.data[idx] - maxVal);
                 }
 
                 // 3. Compute loss directly using log_softmax
@@ -128,13 +128,13 @@ pub const SoftmaxCCE = struct {
                 var sumExp: f64 = 0;
                 for (0..axis_dim) |i| {
                     const idx = base + i * inner;
-                    sumExp += math.exp(x.data[idx] - maxVal);
+                    sumExp += std.math.exp(x.data[idx] - maxVal);
                 }
 
                 // 3. Compute gradients directly
                 for (0..axis_dim) |i| {
                     const idx = base + i * inner;
-                    const exp_val = math.exp(x.data[idx] - maxVal);
+                    const exp_val = std.math.exp(x.data[idx] - maxVal);
                     const softmax_val = exp_val / sumExp;
                     grad_x.data[idx] = dval.data[0] * (softmax_val - y.data[idx]) / n;
                 }

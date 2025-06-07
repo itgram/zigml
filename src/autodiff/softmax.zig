@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Softmax function node.
 /// The Softmax function is commonly used in neural networks, especially in the output layer for multi-class classification tasks.
@@ -75,13 +75,13 @@ pub const Softmax = struct {
                 var sumExp: f64 = 0;
                 for (0..axis_dim) |i| {
                     const idx = base + i * inner;
-                    sumExp += math.exp(x.data[idx] - maxVal);
+                    sumExp += std.math.exp(x.data[idx] - maxVal);
                 }
 
                 // 3. Write softmax values
                 for (0..axis_dim) |i| {
                     const idx = base + i * inner;
-                    self.value.?.data[idx] = math.exp(x.data[idx] - maxVal) / sumExp;
+                    self.value.?.data[idx] = std.math.exp(x.data[idx] - maxVal) / sumExp;
                 }
             }
         }
@@ -173,10 +173,10 @@ test "softmax basic" {
 
     // Compute expected values manually
     const exp_vals = [_]f64{
-        math.exp(2.0),
-        math.exp(1.0),
-        math.exp(0.0),
-        math.exp(-1.0),
+        std.math.exp(2.0),
+        std.math.exp(1.0),
+        std.math.exp(0.0),
+        std.math.exp(-1.0),
     };
     var sum_exp: f64 = 0;
     for (exp_vals) |v| {
@@ -279,8 +279,8 @@ test "softmax with multiple shapes" {
 
         // Compute expected values manually for each column
         const exp_vals = [_]f64{
-            math.exp(2.0), math.exp(1.0), math.exp(0.0),
-            math.exp(1.0), math.exp(0.0), math.exp(-1.0),
+            std.math.exp(2.0), std.math.exp(1.0), std.math.exp(0.0),
+            std.math.exp(1.0), std.math.exp(0.0), std.math.exp(-1.0),
         };
         var sum_exp = [_]f64{0} ** 3;
         for (0..2) |i| {
@@ -337,8 +337,8 @@ test "softmax with multiple shapes" {
 
         // Compute expected values manually for each row
         const exp_vals = [_]f64{
-            math.exp(2.0), math.exp(1.0), math.exp(0.0),
-            math.exp(1.0), math.exp(0.0), math.exp(-1.0),
+            std.math.exp(2.0), std.math.exp(1.0), std.math.exp(0.0),
+            std.math.exp(1.0), std.math.exp(0.0), std.math.exp(-1.0),
         };
         var sum_exp = [_]f64{0} ** 2;
         for (0..2) |i| {
@@ -394,9 +394,9 @@ test "softmax reset" {
 
     // Compute expected values manually
     const exp_vals = [_]f64{
-        math.exp(2.0),
-        math.exp(1.0),
-        math.exp(0.0),
+        std.math.exp(2.0),
+        std.math.exp(1.0),
+        std.math.exp(0.0),
     };
     var sum_exp: f64 = 0;
     for (exp_vals) |v| {

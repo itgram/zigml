@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// GELU function node.
 /// The GELU (Gaussian Error Linear Unit) activation function is a smooth approximation of the ReLU function.
@@ -57,7 +57,7 @@ pub const GELU = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = 0.5 * xv * (1 + math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv)));
+            v.* = 0.5 * xv * (1 + std.math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv)));
         }
 
         return self.value.?;
@@ -75,7 +75,7 @@ pub const GELU = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            const tanhPart = math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv));
+            const tanhPart = std.math.tanh(sqrt_2_over_pi * (xv + coeff * xv * xv * xv));
             const derivative = 0.5 * (1 + tanhPart) + 0.5 * xv * (1 - tanhPart * tanhPart) * sqrt_2_over_pi * (1 + 3 * coeff * xv * xv);
 
             v.* = dv * derivative;
@@ -129,10 +129,10 @@ test "gelu basic" {
     // Expected values for each input:
     // f(x) = 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
     const expected = [_]f64{
-        @as(f64, 0.5 * -2.0 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
-        @as(f64, 0.5 * -1.0 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
+        @as(f64, 0.5 * -2.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
+        @as(f64, 0.5 * -1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
         @as(f64, 0.0), // gelu(0.0)
-        @as(f64, 0.5 * 1.0 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
+        @as(f64, 0.5 * 1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
     };
 
     for (result.data, expected) |actual, exp| {
@@ -181,21 +181,21 @@ test "gelu gradient" {
     // ∂f/∂x = 0.5 * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3))) +
     //         0.5 * x * (1 - tanh(sqrt(2/π) * (x + 0.044715 * x^3))^2) * sqrt(2/π) * (1 + 3 * 0.044715 * x^2)
     const expected_grad = [_]f64{
-        @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
-            0.5 * -2.0 * (1 - math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
-                math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
+        @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
+            0.5 * -2.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
+                std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
                 sqrt_2_over_pi * (1 + 3 * coeff * -2.0 * -2.0)), // gelu'(-2.0)
-        @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
-            0.5 * -1.0 * (1 - math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
-                math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
+        @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
+            0.5 * -1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
+                std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
                 sqrt_2_over_pi * (1 + 3 * coeff * -1.0 * -1.0)), // gelu'(-1.0)
-        @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
-            0.5 * 0.0 * (1 - math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
-                math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
+        @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
+            0.5 * 0.0 * (1 - std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
+                std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
                 sqrt_2_over_pi * (1 + 3 * coeff * 0.0 * 0.0)), // gelu'(0.0)
-        @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
-            0.5 * 1.0 * (1 - math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
-                math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
+        @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
+            0.5 * 1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
+                std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
                 sqrt_2_over_pi * (1 + 3 * coeff * 1.0 * 1.0)), // gelu'(1.0)
     };
 
@@ -235,10 +235,10 @@ test "gelu with multiple shapes" {
         // Expected values for each input:
         // f(x) = 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
         const expected = [_]f64{
-            @as(f64, 0.5 * -2.0 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
-            @as(f64, 0.5 * -1.0 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
+            @as(f64, 0.5 * -2.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
+            @as(f64, 0.5 * -1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
             @as(f64, 0.0), // gelu(0.0)
-            @as(f64, 0.5 * 1.0 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
+            @as(f64, 0.5 * 1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -259,21 +259,21 @@ test "gelu with multiple shapes" {
         // ∂f/∂x = 0.5 * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3))) +
         //         0.5 * x * (1 - tanh(sqrt(2/π) * (x + 0.044715 * x^3))^2) * sqrt(2/π) * (1 + 3 * 0.044715 * x^2)
         const expected_grad = [_]f64{
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
-                0.5 * -2.0 * (1 - math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
-                    math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
+                0.5 * -2.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -2.0 * -2.0)), // gelu'(-2.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
-                0.5 * -1.0 * (1 - math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
-                    math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
+                0.5 * -1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -1.0 * -1.0)), // gelu'(-1.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
-                0.5 * 0.0 * (1 - math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
-                    math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
+                0.5 * 0.0 * (1 - std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 0.0 * 0.0)), // gelu'(0.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
-                0.5 * 1.0 * (1 - math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
-                    math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
+                0.5 * 1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 1.0 * 1.0)), // gelu'(1.0)
         };
 
@@ -310,14 +310,14 @@ test "gelu with multiple shapes" {
         // Expected values for each input:
         // f(x) = 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
         const expected = [_]f64{
-            @as(f64, 0.5 * -2.0 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
-            @as(f64, 0.5 * -1.0 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
+            @as(f64, 0.5 * -2.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
+            @as(f64, 0.5 * -1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
             @as(f64, 0.0), // gelu(0.0)
-            @as(f64, 0.5 * 1.0 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
-            @as(f64, 0.5 * -1.5 * (1 + math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5)))), // gelu(-1.5)
-            @as(f64, 0.5 * -0.5 * (1 + math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5)))), // gelu(-0.5)
-            @as(f64, 0.5 * 0.5 * (1 + math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5)))), // gelu(0.5)
-            @as(f64, 0.5 * 1.5 * (1 + math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5)))), // gelu(1.5)
+            @as(f64, 0.5 * 1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
+            @as(f64, 0.5 * -1.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5)))), // gelu(-1.5)
+            @as(f64, 0.5 * -0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5)))), // gelu(-0.5)
+            @as(f64, 0.5 * 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5)))), // gelu(0.5)
+            @as(f64, 0.5 * 1.5 * (1 + std.math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5)))), // gelu(1.5)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -337,37 +337,37 @@ test "gelu with multiple shapes" {
         // ∂f/∂x = 0.5 * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3))) +
         //         0.5 * x * (1 - tanh(sqrt(2/π) * (x + 0.044715 * x^3))^2) * sqrt(2/π) * (1 + 3 * 0.044715 * x^2)
         const expected_grad = [_]f64{
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
-                0.5 * -2.0 * (1 - math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
-                    math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) +
+                0.5 * -2.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -2.0 * -2.0)), // gelu'(-2.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
-                0.5 * -1.0 * (1 - math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
-                    math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) +
+                0.5 * -1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -1.0 * -1.0)), // gelu'(-1.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
-                0.5 * 0.0 * (1 - math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
-                    math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) +
+                0.5 * 0.0 * (1 - std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (0.0 + coeff * 0.0 * 0.0 * 0.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 0.0 * 0.0)), // gelu'(0.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
-                0.5 * 1.0 * (1 - math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
-                    math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) +
+                0.5 * 1.0 * (1 - std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)) *
+                    std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 1.0 * 1.0)), // gelu'(1.0)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5))) +
-                0.5 * -1.5 * (1 - math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5)) *
-                    math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5))) +
+                0.5 * -1.5 * (1 - std.math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5)) *
+                    std.math.tanh(sqrt_2_over_pi * (-1.5 + coeff * -1.5 * -1.5 * -1.5))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -1.5 * -1.5)), // gelu'(-1.5)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5))) +
-                0.5 * -0.5 * (1 - math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5)) *
-                    math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5))) +
+                0.5 * -0.5 * (1 - std.math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5)) *
+                    std.math.tanh(sqrt_2_over_pi * (-0.5 + coeff * -0.5 * -0.5 * -0.5))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * -0.5 * -0.5)), // gelu'(-0.5)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5))) +
-                0.5 * 0.5 * (1 - math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5)) *
-                    math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5))) +
+                0.5 * 0.5 * (1 - std.math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5)) *
+                    std.math.tanh(sqrt_2_over_pi * (0.5 + coeff * 0.5 * 0.5 * 0.5))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 0.5 * 0.5)), // gelu'(0.5)
-            @as(f64, 0.5 * (1 + math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5))) +
-                0.5 * 1.5 * (1 - math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5)) *
-                    math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5))) *
+            @as(f64, 0.5 * (1 + std.math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5))) +
+                0.5 * 1.5 * (1 - std.math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5)) *
+                    std.math.tanh(sqrt_2_over_pi * (1.5 + coeff * 1.5 * 1.5 * 1.5))) *
                     sqrt_2_over_pi * (1 + 3 * coeff * 1.5 * 1.5)), // gelu'(1.5)
         };
 
@@ -406,10 +406,10 @@ test "gelu reset" {
     // Expected values for each input:
     // f(x) = 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
     const expected1 = [_]f64{
-        @as(f64, 0.5 * -2.0 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
-        @as(f64, 0.5 * -1.0 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
+        @as(f64, 0.5 * -2.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
+        @as(f64, 0.5 * -1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
         @as(f64, 0.0), // gelu(0.0)
-        @as(f64, 0.5 * 1.0 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
+        @as(f64, 0.5 * 1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -422,10 +422,10 @@ test "gelu reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        @as(f64, 0.5 * -2.0 * (1 + math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
-        @as(f64, 0.5 * -1.0 * (1 + math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
+        @as(f64, 0.5 * -2.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-2.0 + coeff * -2.0 * -2.0 * -2.0)))), // gelu(-2.0)
+        @as(f64, 0.5 * -1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (-1.0 + coeff * -1.0 * -1.0 * -1.0)))), // gelu(-1.0)
         @as(f64, 0.0), // gelu(0.0)
-        @as(f64, 0.5 * 1.0 * (1 + math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
+        @as(f64, 0.5 * 1.0 * (1 + std.math.tanh(sqrt_2_over_pi * (1.0 + coeff * 1.0 * 1.0 * 1.0)))), // gelu(1.0)
     };
 
     for (result2.data, expected2) |actual, exp| {

@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Cos function node.
 /// The Cos node represents the cosine function applied to a tensor.
@@ -56,7 +56,7 @@ pub const Cos = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.cos(xv);
+            v.* = std.math.cos(xv);
         }
 
         return self.value.?;
@@ -74,7 +74,7 @@ pub const Cos = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            v.* = -dv * math.sin(xv);
+            v.* = -dv * std.math.sin(xv);
         }
 
         try self.x.diff(grad);
@@ -118,10 +118,10 @@ test "cos basic" {
     // Evaluate
     const result = try cos_op.eval();
     const expected = [_]f64{
-        math.cos(0.0),
-        math.cos(std.math.pi / 4.0),
-        math.cos(std.math.pi / 2.0),
-        math.cos(std.math.pi),
+        std.math.cos(0.0),
+        std.math.cos(std.math.pi / 4.0),
+        std.math.cos(std.math.pi / 2.0),
+        std.math.cos(std.math.pi),
     };
 
     for (result.data, expected) |actual, exp| {
@@ -161,10 +161,10 @@ test "cos gradient" {
 
     // Expected gradients
     const expected_grad = [_]f64{
-        -math.sin(0.0),
-        -math.sin(std.math.pi / 4.0),
-        -math.sin(std.math.pi / 2.0),
-        -math.sin(std.math.pi),
+        -std.math.sin(0.0),
+        -std.math.sin(std.math.pi / 4.0),
+        -std.math.sin(std.math.pi / 2.0),
+        -std.math.sin(std.math.pi),
     };
 
     for (x.grad.data, expected_grad) |actual, exp| {
@@ -194,10 +194,10 @@ test "cos with different shapes" {
     // Evaluate
     const result = try cos_op.eval();
     const expected = [_]f64{
-        math.cos(0.0),
-        math.cos(std.math.pi / 4.0),
-        math.cos(std.math.pi / 2.0),
-        math.cos(std.math.pi),
+        std.math.cos(0.0),
+        std.math.cos(std.math.pi / 4.0),
+        std.math.cos(std.math.pi / 2.0),
+        std.math.cos(std.math.pi),
     };
 
     for (result.data, expected) |actual, exp| {
@@ -227,10 +227,10 @@ test "cos reset" {
     // First evaluation
     const result1 = try cos_op.eval();
     const expected1 = [_]f64{
-        math.cos(0.0),
-        math.cos(std.math.pi / 4.0),
-        math.cos(std.math.pi / 2.0),
-        math.cos(std.math.pi),
+        std.math.cos(0.0),
+        std.math.cos(std.math.pi / 4.0),
+        std.math.cos(std.math.pi / 2.0),
+        std.math.cos(std.math.pi),
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -243,10 +243,10 @@ test "cos reset" {
     // Second evaluation
     const result2 = try cos_op.eval();
     const expected2 = [_]f64{
-        math.cos(0.0),
-        math.cos(std.math.pi / 4.0),
-        math.cos(std.math.pi / 2.0),
-        math.cos(std.math.pi),
+        std.math.cos(0.0),
+        std.math.cos(std.math.pi / 4.0),
+        std.math.cos(std.math.pi / 2.0),
+        std.math.cos(std.math.pi),
     };
 
     for (result2.data, expected2) |actual, exp| {

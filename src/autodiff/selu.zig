@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// SELU function node.
 /// The Scaled Exponential Linear Unit (SELU) activation function.
@@ -59,7 +59,7 @@ pub const SELU = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (math.exp(xv) - 1);
+            v.* = if (xv > 0) self.lambda * xv else self.lambda * self.alpha * (std.math.exp(xv) - 1);
         }
 
         return self.value.?;
@@ -130,8 +130,8 @@ test "selu basic" {
     // For x > 0: f(x) = λ * x
     // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
     const expected = [_]f64{
-        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
-        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-1.0) - 1)), // selu(-1.0)
         @as(f64, 0.0), // selu(0.0)
         @as(f64, default_lambda), // selu(1.0)
     };
@@ -182,8 +182,8 @@ test "selu gradient" {
     // For x > 0: ∂f/∂x = λ
     // For x ≤ 0: ∂f/∂x = λ * α * exp(x)
     const expected_grad = [_]f64{
-        @as(f64, default_lambda * default_alpha * math.exp(-2.0)), // selu'(-2.0)
-        @as(f64, default_lambda * default_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, default_lambda * default_alpha * std.math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, default_lambda * default_alpha * std.math.exp(-1.0)), // selu'(-1.0)
         @as(f64, default_lambda * default_alpha), // selu'(0.0)
         @as(f64, default_lambda), // selu'(1.0)
     };
@@ -223,8 +223,8 @@ test "selu with 2d shapes" {
     // For x > 0: f(x) = λ * x
     // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
     const expected = [_]f64{
-        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
-        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-1.0) - 1)), // selu(-1.0)
         @as(f64, 0.0), // selu(0.0)
         @as(f64, default_lambda), // selu(1.0)
     };
@@ -247,8 +247,8 @@ test "selu with 2d shapes" {
     // For x > 0: ∂f/∂x = λ
     // For x ≤ 0: ∂f/∂x = λ * α * exp(x)
     const expected_grad = [_]f64{
-        @as(f64, default_lambda * default_alpha * math.exp(-2.0)), // selu'(-2.0)
-        @as(f64, default_lambda * default_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, default_lambda * default_alpha * std.math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, default_lambda * default_alpha * std.math.exp(-1.0)), // selu'(-1.0)
         @as(f64, default_lambda * default_alpha), // selu'(0.0)
         @as(f64, default_lambda), // selu'(1.0)
     };
@@ -288,8 +288,8 @@ test "selu reset" {
     // For x > 0: f(x) = λ * x
     // For x ≤ 0: f(x) = λ * α * (exp(x) - 1)
     const expected1 = [_]f64{
-        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
-        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-1.0) - 1)), // selu(-1.0)
         @as(f64, 0.0), // selu(0.0)
         @as(f64, default_lambda), // selu(1.0)
     };
@@ -304,8 +304,8 @@ test "selu reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        @as(f64, default_lambda * default_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
-        @as(f64, default_lambda * default_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, default_lambda * default_alpha * (std.math.exp(-1.0) - 1)), // selu(-1.0)
         @as(f64, 0.0), // selu(0.0)
         @as(f64, default_lambda), // selu(1.0)
     };
@@ -345,8 +345,8 @@ test "selu custom parameters" {
     //  0.0: 0
     //  1.0: λ * 1.0
     const expected = [_]f64{
-        @as(f64, custom_lambda * custom_alpha * (math.exp(-2.0) - 1)), // selu(-2.0)
-        @as(f64, custom_lambda * custom_alpha * (math.exp(-1.0) - 1)), // selu(-1.0)
+        @as(f64, custom_lambda * custom_alpha * (std.math.exp(-2.0) - 1)), // selu(-2.0)
+        @as(f64, custom_lambda * custom_alpha * (std.math.exp(-1.0) - 1)), // selu(-1.0)
         @as(f64, 0.0), // selu(0.0)
         @as(f64, custom_lambda), // selu(1.0)
     };
@@ -371,8 +371,8 @@ test "selu custom parameters" {
     //  0.0: λ * α * exp(0.0)
     //  1.0: λ
     const expected_grad = [_]f64{
-        @as(f64, custom_lambda * custom_alpha * math.exp(-2.0)), // selu'(-2.0)
-        @as(f64, custom_lambda * custom_alpha * math.exp(-1.0)), // selu'(-1.0)
+        @as(f64, custom_lambda * custom_alpha * std.math.exp(-2.0)), // selu'(-2.0)
+        @as(f64, custom_lambda * custom_alpha * std.math.exp(-1.0)), // selu'(-1.0)
         @as(f64, custom_lambda * custom_alpha), // selu'(0.0)
         @as(f64, custom_lambda), // selu'(1.0)
     };

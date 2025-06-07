@@ -15,7 +15,6 @@ pub const MAE = @import("mae.zig").MAE;
 pub const MatMul = @import("matmul.zig").MatMul;
 pub const MSE = @import("mse.zig").MSE;
 pub const Multiply = @import("multiply.zig").Multiply;
-pub const Node = @import("node.zig").Node;
 pub const Power = @import("power.zig").Power;
 pub const PReLU = @import("prelu.zig").PReLU;
 pub const ReLU = @import("relu.zig").ReLU;
@@ -194,6 +193,82 @@ pub fn variable(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) 
     return try Variable.init(allocator, name, value);
 }
 
+/// Node interface for autodiff.
+/// The Node interface defines the structure for nodes in the computation graph.
+/// Each node must implement the `eval`, `diff`, and `reset` methods.
+pub const Node = union(enum) {
+    add: *Add,
+    bce: *BCE,
+    cce: *CCE,
+    constant: *Constant,
+    cos: *Cos,
+    divide: *Divide,
+    elu: *ELU,
+    exp: *Exp,
+    gelu: *GELU,
+    leaky_relu: *LeakyReLU,
+    linear: *Linear,
+    ln: *Ln,
+    log: *Log,
+    mae: *MAE,
+    matmul: *MatMul,
+    mse: *MSE,
+    multiply: *Multiply,
+    power: *Power,
+    prelu: *PReLU,
+    relu: *ReLU,
+    selu: *SELU,
+    sigmoid: *Sigmoid,
+    sin: *Sin,
+    softmax_cce: *SoftmaxCCE,
+    softmax: *Softmax,
+    step: *Step,
+    subtract: *Subtract,
+    swish: *Swish,
+    tan: *Tan,
+    tanh: *Tanh,
+    variable: *Variable,
+
+    /// Creates a new node from a concrete implementation.
+    pub fn init(pointer: anytype) Node {
+        const T = @TypeOf(pointer);
+        const ptrInfo = @typeInfo(T);
+
+        std.debug.assert(ptrInfo == .pointer); // Must be a pointer
+        std.debug.assert(ptrInfo.pointer.size == .one); // Must be a single-item pointer
+        std.debug.assert(@typeInfo(ptrInfo.pointer.child) == .@"struct"); // Must point to a struct
+
+        inline for (std.meta.fields(Node)) |field| {
+            if (field.type == T) {
+                return @unionInit(Node, field.name, pointer);
+            }
+        }
+        @compileError("Invalid node type: " ++ @typeName(T));
+    }
+
+    /// Evaluates the node and returns the result tensor.
+    pub fn eval(self: Node) anyerror!*Tensor {
+        return switch (self) {
+            inline else => |n| try n.eval(),
+        };
+    }
+
+    /// Computes the gradient of the node with respect to its inputs.
+    pub fn diff(self: Node, dval: *Tensor) anyerror!void {
+        try switch (self) {
+            inline else => |n| n.diff(dval),
+        };
+    }
+
+    /// Resets the node's state by clearing cached values.
+    /// This is useful when you want to recompute values in the computation graph.
+    pub fn reset(self: Node) void {
+        switch (self) {
+            inline else => |n| n.reset(),
+        }
+    }
+};
+
 // Include all test files
 test {
     _ = @import("add.zig");
@@ -213,7 +288,6 @@ test {
     _ = @import("matmul.zig");
     _ = @import("mse.zig");
     _ = @import("multiply.zig");
-    _ = @import("node.zig");
     _ = @import("power.zig");
     _ = @import("prelu.zig");
     _ = @import("relu.zig");

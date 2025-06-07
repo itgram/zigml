@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Exp function node.
 /// The Exp node represents the exponential function applied to a tensor.
@@ -54,7 +54,7 @@ pub const Exp = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.exp(xv);
+            v.* = std.math.exp(xv);
         }
 
         return self.value.?;
@@ -117,10 +117,10 @@ test "exp basic" {
     // Expected values for each input:
     // f(x) = e^x
     const expected = [_]f64{
-        @as(f64, math.exp(-2.0)), // exp(-2.0)
-        @as(f64, math.exp(-1.0)), // exp(-1.0)
-        @as(f64, math.exp(0.0)), // exp(0.0)
-        @as(f64, math.exp(1.0)), // exp(1.0)
+        @as(f64, std.math.exp(-2.0)), // exp(-2.0)
+        @as(f64, std.math.exp(-1.0)), // exp(-1.0)
+        @as(f64, std.math.exp(0.0)), // exp(0.0)
+        @as(f64, std.math.exp(1.0)), // exp(1.0)
     };
 
     for (result.data, expected) |actual, exp| {
@@ -164,10 +164,10 @@ test "exp gradient" {
     // Expected gradients for each input:
     // ∂f/∂x = e^x
     const expected_grad = [_]f64{
-        @as(f64, math.exp(-2.0)), // exp'(-2.0)
-        @as(f64, math.exp(-1.0)), // exp'(-1.0)
-        @as(f64, math.exp(0.0)), // exp'(0.0)
-        @as(f64, math.exp(1.0)), // exp'(1.0)
+        @as(f64, std.math.exp(-2.0)), // exp'(-2.0)
+        @as(f64, std.math.exp(-1.0)), // exp'(-1.0)
+        @as(f64, std.math.exp(0.0)), // exp'(0.0)
+        @as(f64, std.math.exp(1.0)), // exp'(1.0)
     };
 
     for (x.grad.data, expected_grad) |actual, exp| {
@@ -202,10 +202,10 @@ test "exp with multiple shapes" {
         // Expected values for each input:
         // f(x) = e^x
         const expected = [_]f64{
-            @as(f64, math.exp(-2.0)), // exp(-2.0)
-            @as(f64, math.exp(-1.0)), // exp(-1.0)
-            @as(f64, math.exp(0.0)), // exp(0.0)
-            @as(f64, math.exp(1.0)), // exp(1.0)
+            @as(f64, std.math.exp(-2.0)), // exp(-2.0)
+            @as(f64, std.math.exp(-1.0)), // exp(-1.0)
+            @as(f64, std.math.exp(0.0)), // exp(0.0)
+            @as(f64, std.math.exp(1.0)), // exp(1.0)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -225,10 +225,10 @@ test "exp with multiple shapes" {
         // Expected gradients for each position:
         // ∂f/∂x = e^x
         const expected_grad = [_]f64{
-            @as(f64, math.exp(-2.0)), // exp'(-2.0)
-            @as(f64, math.exp(-1.0)), // exp'(-1.0)
-            @as(f64, math.exp(0.0)), // exp'(0.0)
-            @as(f64, math.exp(1.0)), // exp'(1.0)
+            @as(f64, std.math.exp(-2.0)), // exp'(-2.0)
+            @as(f64, std.math.exp(-1.0)), // exp'(-1.0)
+            @as(f64, std.math.exp(0.0)), // exp'(0.0)
+            @as(f64, std.math.exp(1.0)), // exp'(1.0)
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -264,14 +264,14 @@ test "exp with multiple shapes" {
         // Expected values for each input:
         // f(x) = e^x
         const expected = [_]f64{
-            @as(f64, math.exp(-2.0)), // exp(-2.0)
-            @as(f64, math.exp(-1.0)), // exp(-1.0)
-            @as(f64, math.exp(0.0)), // exp(0.0)
-            @as(f64, math.exp(1.0)), // exp(1.0)
-            @as(f64, math.exp(-1.5)), // exp(-1.5)
-            @as(f64, math.exp(-0.5)), // exp(-0.5)
-            @as(f64, math.exp(0.5)), // exp(0.5)
-            @as(f64, math.exp(1.5)), // exp(1.5)
+            @as(f64, std.math.exp(-2.0)), // exp(-2.0)
+            @as(f64, std.math.exp(-1.0)), // exp(-1.0)
+            @as(f64, std.math.exp(0.0)), // exp(0.0)
+            @as(f64, std.math.exp(1.0)), // exp(1.0)
+            @as(f64, std.math.exp(-1.5)), // exp(-1.5)
+            @as(f64, std.math.exp(-0.5)), // exp(-0.5)
+            @as(f64, std.math.exp(0.5)), // exp(0.5)
+            @as(f64, std.math.exp(1.5)), // exp(1.5)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -290,14 +290,14 @@ test "exp with multiple shapes" {
         // Expected gradients for each position:
         // ∂f/∂x = e^x
         const expected_grad = [_]f64{
-            @as(f64, math.exp(-2.0)), // exp'(-2.0)
-            @as(f64, math.exp(-1.0)), // exp'(-1.0)
-            @as(f64, math.exp(0.0)), // exp'(0.0)
-            @as(f64, math.exp(1.0)), // exp'(1.0)
-            @as(f64, math.exp(-1.5)), // exp'(-1.5)
-            @as(f64, math.exp(-0.5)), // exp'(-0.5)
-            @as(f64, math.exp(0.5)), // exp'(0.5)
-            @as(f64, math.exp(1.5)), // exp'(1.5)
+            @as(f64, std.math.exp(-2.0)), // exp'(-2.0)
+            @as(f64, std.math.exp(-1.0)), // exp'(-1.0)
+            @as(f64, std.math.exp(0.0)), // exp'(0.0)
+            @as(f64, std.math.exp(1.0)), // exp'(1.0)
+            @as(f64, std.math.exp(-1.5)), // exp'(-1.5)
+            @as(f64, std.math.exp(-0.5)), // exp'(-0.5)
+            @as(f64, std.math.exp(0.5)), // exp'(0.5)
+            @as(f64, std.math.exp(1.5)), // exp'(1.5)
         };
 
         for (x.grad.data, expected_grad) |actual, exp| {
@@ -331,10 +331,10 @@ test "exp reset" {
     // Expected values for each input:
     // f(x) = e^x
     const expected1 = [_]f64{
-        @as(f64, math.exp(-2.0)), // exp(-2.0)
-        @as(f64, math.exp(-1.0)), // exp(-1.0)
-        @as(f64, math.exp(0.0)), // exp(0.0)
-        @as(f64, math.exp(1.0)), // exp(1.0)
+        @as(f64, std.math.exp(-2.0)), // exp(-2.0)
+        @as(f64, std.math.exp(-1.0)), // exp(-1.0)
+        @as(f64, std.math.exp(0.0)), // exp(0.0)
+        @as(f64, std.math.exp(1.0)), // exp(1.0)
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -347,10 +347,10 @@ test "exp reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        @as(f64, math.exp(-2.0)), // exp(-2.0)
-        @as(f64, math.exp(-1.0)), // exp(-1.0)
-        @as(f64, math.exp(0.0)), // exp(0.0)
-        @as(f64, math.exp(1.0)), // exp(1.0)
+        @as(f64, std.math.exp(-2.0)), // exp(-2.0)
+        @as(f64, std.math.exp(-1.0)), // exp(-1.0)
+        @as(f64, std.math.exp(0.0)), // exp(0.0)
+        @as(f64, std.math.exp(1.0)), // exp(1.0)
     };
 
     for (result2.data, expected2) |actual, exp| {

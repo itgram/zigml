@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Tan function node.
 /// The Tan node represents the tangent function applied to a tensor.
@@ -56,7 +56,7 @@ pub const Tan = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.tan(xv);
+            v.* = std.math.tan(xv);
         }
 
         return self.value.?;
@@ -74,7 +74,7 @@ pub const Tan = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            const sec2 = 1.0 / math.cos(xv);
+            const sec2 = 1.0 / std.math.cos(xv);
             v.* = dv * sec2 * sec2;
         }
 

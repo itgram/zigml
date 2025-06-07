@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Swish function node.
 /// The Swish function is a smooth, non-monotonic activation function.
@@ -58,7 +58,7 @@ pub const Swish = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = xv / (1 + math.exp(-xv));
+            v.* = xv / (1 + std.math.exp(-xv));
         }
 
         return self.value.?;
@@ -76,7 +76,7 @@ pub const Swish = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            const sig = 1 / (1 + math.exp(-xv));
+            const sig = 1 / (1 + std.math.exp(-xv));
             v.* = dv * (sig + xv * sig * (1 - sig));
         }
 

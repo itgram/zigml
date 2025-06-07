@@ -1,8 +1,8 @@
 const std = @import("std");
-const math = @import("std").math;
-const Node = @import("node.zig").Node;
-const Tensor = @import("tensor.zig").Tensor;
-const Variable = @import("variable.zig").Variable;
+const autodiff = @import("autodiff.zig");
+const Node = autodiff.Node;
+const Tensor = autodiff.Tensor;
+const Variable = autodiff.Variable;
 
 /// Log function node.
 /// The Log node represents the logarithm function applied to a tensor.
@@ -55,7 +55,7 @@ pub const Log = struct {
         self.value = try Tensor.init(self.allocator, x.shape);
 
         for (self.value.?.data, x.data) |*v, xv| {
-            v.* = math.log10(xv);
+            v.* = std.math.log10(xv);
         }
 
         return self.value.?;
@@ -73,7 +73,7 @@ pub const Log = struct {
         defer grad.deinit();
 
         for (grad.data, x.data, dval.data) |*v, xv, dv| {
-            v.* = dv / (xv * math.ln10);
+            v.* = dv / (xv * std.math.ln10);
         }
 
         try self.x.diff(grad);
@@ -122,12 +122,12 @@ test "log basic" {
     // Expected values for each input:
     // f(x) = log₁₀(x)
     const expected = [_]f64{
-        @as(f64, math.log10(0.01)), // log₁₀(0.01) = -2
-        @as(f64, math.log10(0.1)), // log₁₀(0.1) = -1
-        @as(f64, math.log10(0.5)), // log₁₀(0.5) ≈ -0.3010
-        @as(f64, math.log10(1.0)), // log₁₀(1.0) = 0
-        @as(f64, math.log10(10.0)), // log₁₀(10.0) = 1
-        @as(f64, math.log10(100.0)), // log₁₀(100.0) = 2
+        @as(f64, std.math.log10(0.01)), // log₁₀(0.01) = -2
+        @as(f64, std.math.log10(0.1)), // log₁₀(0.1) = -1
+        @as(f64, std.math.log10(0.5)), // log₁₀(0.5) ≈ -0.3010
+        @as(f64, std.math.log10(1.0)), // log₁₀(1.0) = 0
+        @as(f64, std.math.log10(10.0)), // log₁₀(10.0) = 1
+        @as(f64, std.math.log10(100.0)), // log₁₀(100.0) = 2
     };
 
     // Verify results with appropriate tolerance
@@ -174,7 +174,7 @@ test "log gradient" {
 
     // Expected gradients for each input:
     // ∂f/∂x = 1/(x * ln(10))
-    const ln10 = math.ln10;
+    const ln10 = std.math.ln10;
     const expected_grad = [_]f64{
         1.0 / (0.1 * ln10), // log'(0.1)
         1.0 / (0.5 * ln10), // log'(0.5)
@@ -214,10 +214,10 @@ test "log with multiple shapes" {
         // Expected values for each input:
         // f(x) = log₁₀(x)
         const expected = [_]f64{
-            @as(f64, math.log10(0.1)), // log₁₀(0.1)
-            @as(f64, math.log10(0.5)), // log₁₀(0.5)
-            @as(f64, math.log10(1.0)), // log₁₀(1.0)
-            @as(f64, math.log10(10.0)), // log₁₀(10.0)
+            @as(f64, std.math.log10(0.1)), // log₁₀(0.1)
+            @as(f64, std.math.log10(0.5)), // log₁₀(0.5)
+            @as(f64, std.math.log10(1.0)), // log₁₀(1.0)
+            @as(f64, std.math.log10(10.0)), // log₁₀(10.0)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -236,7 +236,7 @@ test "log with multiple shapes" {
 
         // Expected gradients for each position:
         // ∂f/∂x = 1/(x * ln(10))
-        const ln10 = math.ln10;
+        const ln10 = std.math.ln10;
         const expected_grad = [_]f64{
             1.0 / (0.1 * ln10), // log'(0.1)
             1.0 / (0.5 * ln10), // log'(0.5)
@@ -277,14 +277,14 @@ test "log with multiple shapes" {
         // Expected values for each input:
         // f(x) = log₁₀(x)
         const expected = [_]f64{
-            @as(f64, math.log10(0.1)), // log₁₀(0.1)
-            @as(f64, math.log10(0.5)), // log₁₀(0.5)
-            @as(f64, math.log10(1.0)), // log₁₀(1.0)
-            @as(f64, math.log10(10.0)), // log₁₀(10.0)
-            @as(f64, math.log10(0.2)), // log₁₀(0.2)
-            @as(f64, math.log10(0.8)), // log₁₀(0.8)
-            @as(f64, math.log10(1.5)), // log₁₀(1.5)
-            @as(f64, math.log10(20.0)), // log₁₀(20.0)
+            @as(f64, std.math.log10(0.1)), // log₁₀(0.1)
+            @as(f64, std.math.log10(0.5)), // log₁₀(0.5)
+            @as(f64, std.math.log10(1.0)), // log₁₀(1.0)
+            @as(f64, std.math.log10(10.0)), // log₁₀(10.0)
+            @as(f64, std.math.log10(0.2)), // log₁₀(0.2)
+            @as(f64, std.math.log10(0.8)), // log₁₀(0.8)
+            @as(f64, std.math.log10(1.5)), // log₁₀(1.5)
+            @as(f64, std.math.log10(20.0)), // log₁₀(20.0)
         };
 
         for (result.data, expected) |actual, exp| {
@@ -302,7 +302,7 @@ test "log with multiple shapes" {
 
         // Expected gradients for each position:
         // ∂f/∂x = 1/(x * ln(10))
-        const ln10 = math.ln10;
+        const ln10 = std.math.ln10;
         const expected_grad = [_]f64{
             1.0 / (0.1 * ln10), // log'(0.1)
             1.0 / (0.5 * ln10), // log'(0.5)
@@ -345,10 +345,10 @@ test "log reset" {
     // Expected values for each input:
     // f(x) = log₁₀(x)
     const expected1 = [_]f64{
-        @as(f64, math.log10(0.1)), // log₁₀(0.1)
-        @as(f64, math.log10(0.5)), // log₁₀(0.5)
-        @as(f64, math.log10(1.0)), // log₁₀(1.0)
-        @as(f64, math.log10(10.0)), // log₁₀(10.0)
+        @as(f64, std.math.log10(0.1)), // log₁₀(0.1)
+        @as(f64, std.math.log10(0.5)), // log₁₀(0.5)
+        @as(f64, std.math.log10(1.0)), // log₁₀(1.0)
+        @as(f64, std.math.log10(10.0)), // log₁₀(10.0)
     };
 
     for (result1.data, expected1) |actual, exp| {
@@ -361,10 +361,10 @@ test "log reset" {
 
     // Expected values should be the same after reset
     const expected2 = [_]f64{
-        @as(f64, math.log10(0.1)), // log₁₀(0.1)
-        @as(f64, math.log10(0.5)), // log₁₀(0.5)
-        @as(f64, math.log10(1.0)), // log₁₀(1.0)
-        @as(f64, math.log10(10.0)), // log₁₀(10.0)
+        @as(f64, std.math.log10(0.1)), // log₁₀(0.1)
+        @as(f64, std.math.log10(0.5)), // log₁₀(0.5)
+        @as(f64, std.math.log10(1.0)), // log₁₀(1.0)
+        @as(f64, std.math.log10(10.0)), // log₁₀(10.0)
     };
 
     for (result2.data, expected2) |actual, exp| {
