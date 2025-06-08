@@ -15,8 +15,8 @@ const Variable = autodiff.Variable;
 pub const Step = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    x: Node,
     threshold: f64 = 0.0, // Default threshold value
+    x: Node,
 
     /// Creates a new step node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, threshold: f64) !*Step {
@@ -24,8 +24,8 @@ pub const Step = struct {
         self.* = .{
             .allocator = allocator,
             .value = null,
-            .x = x,
             .threshold = threshold,
+            .x = x,
         };
         return self;
     }

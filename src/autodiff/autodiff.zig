@@ -1,5 +1,6 @@
 pub const Add = @import("add.zig").Add;
 pub const BCE = @import("bce.zig").BCE;
+pub const Broadcast = @import("broadcast.zig").Broadcast;
 pub const CCE = @import("cce.zig").CCE;
 pub const Constant = @import("constant.zig").Constant;
 pub const Cos = @import("cos.zig").Cos;
@@ -41,6 +42,11 @@ pub fn add(allocator: std.mem.Allocator, x: Node, y: Node) !*Add {
 /// Create a binary cross-entropy loss node
 pub fn bce(allocator: std.mem.Allocator, predictions: Node, targets: Node) !*BCE {
     return try BCE.init(allocator, predictions, targets);
+}
+
+/// Create a broadcast node
+pub fn broadcast(allocator: std.mem.Allocator, x: Node, target_shape: []const usize) !*Broadcast {
+    return try Broadcast.init(allocator, x, target_shape);
 }
 
 /// Create a categorical cross-entropy loss node
@@ -199,6 +205,7 @@ pub fn variable(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) 
 pub const Node = union(enum) {
     add: *Add,
     bce: *BCE,
+    broadcast: *Broadcast,
     cce: *CCE,
     constant: *Constant,
     cos: *Cos,
@@ -273,6 +280,7 @@ pub const Node = union(enum) {
 test {
     _ = @import("add.zig");
     _ = @import("bce.zig");
+    _ = @import("broadcast.zig");
     _ = @import("cce.zig");
     _ = @import("constant.zig");
     _ = @import("cos.zig");

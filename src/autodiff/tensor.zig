@@ -78,7 +78,7 @@ pub const Tensor = struct {
 
     /// Set all elements of the tensor to 0.
     pub fn zero(self: *Tensor) void {
-        for (self.data) |*d| d.* = 0.0;
+        @memset(self.data, 0.0);
     }
 
     /// Get the value of the tensor at the given indices.

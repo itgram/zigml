@@ -16,8 +16,8 @@ const Variable = autodiff.Variable;
 pub const ELU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    x: Node,
     alpha: f64 = 0.01, // small slope for negative inputs
+    x: Node,
 
     /// Creates a new ELU node with the given input node and alpha value.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64) !*ELU {
@@ -25,8 +25,8 @@ pub const ELU = struct {
         self.* = .{
             .allocator = allocator,
             .value = null,
-            .x = x,
             .alpha = alpha,
+            .x = x,
         };
         return self;
     }

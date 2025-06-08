@@ -19,29 +19,24 @@ pub const PReLU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
     grad: *Tensor, // gradient of alpha
-    x: Node,
     alpha: *Tensor, // learnable parameter (trainable)
+    x: Node,
 
     /// Creates a new PReLU node with the given input node and alpha value.
     /// The alpha tensor must have the same shape as the input tensor.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: *Tensor) !*PReLU {
-        const x_tensor = try x.eval();
-        if (!std.mem.eql(usize, x_tensor.shape, alpha.shape)) {
-            return error.ShapeMismatch;
-        }
+        const grad = try Tensor.init(allocator, alpha.shape);
+        errdefer grad.deinit();
 
         const self = try allocator.create(PReLU);
         errdefer allocator.destroy(self);
-
-        const grad = try Tensor.init(allocator, alpha.shape);
-        errdefer grad.deinit();
 
         self.* = .{
             .allocator = allocator,
             .value = null,
             .grad = grad,
-            .x = x,
             .alpha = alpha,
+            .x = x,
         };
         self.grad.zero();
 
@@ -74,7 +69,8 @@ pub const PReLU = struct {
 
         self.value = try Tensor.init(self.allocator, x.shape);
 
-        for (self.value.?.data, x.data, self.alpha.data) |*v, xv, alpha| {
+        for (self.value.?.data, x.data, 0..) |*v, xv, i| {
+            const alpha = self.alpha.data[i % self.alpha.data.len];
             v.* = if (xv > 0) xv else alpha * xv;
         }
 
@@ -93,9 +89,10 @@ pub const PReLU = struct {
         const grad = try Tensor.init(self.allocator, dval.shape);
         defer grad.deinit();
 
-        for (grad.data, self.grad.data, x.data, self.alpha.data, dval.data) |*v, *ag, xv, alpha, dv| {
+        for (grad.data, x.data, dval.data, 0..) |*v, xv, dv, i| {
+            const alpha = self.alpha.data[i % self.alpha.data.len];
             v.* = if (xv > 0) dv else dv * alpha;
-            ag.* += if (xv > 0) 0 else dv * xv;
+            self.grad.data[i % self.grad.data.len] += if (xv > 0) 0 else dv * xv;
         }
 
         try self.x.diff(grad);
@@ -447,9 +444,57 @@ test "prelu shape mismatch" {
     var x = try Variable.init(allocator, "x", xTensor);
     defer x.deinit();
 
-    // Create prelu operation - should fail with ShapeMismatch error
-    const prelu_op = PReLU.init(allocator, x.node(), alphaTensor);
-    try std.testing.expectError(error.ShapeMismatch, prelu_op);
+    // Create prelu operation - should now work with different shapes
+    var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
+    defer prelu_op.deinit();
+
+    // Evaluate and verify results
+    const result = try prelu_op.eval();
+    const expected = [_]f64{
+        @as(f64, -0.02), // 0.01 * -2.0 (using alpha[0])
+        @as(f64, -0.02), // 0.02 * -1.0 (using alpha[1])
+        @as(f64, 0.0), // 0.0 (using alpha[0])
+        @as(f64, 1.0), // 1.0 (using alpha[1])
+    };
+
+    // Verify the results
+    for (result.data, expected) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Test gradient computation
+    const gradTensor = try Tensor.init(allocator, &[_]usize{4});
+    defer gradTensor.deinit();
+    gradTensor.data[0] = 1.0;
+    gradTensor.data[1] = 1.0;
+    gradTensor.data[2] = 1.0;
+    gradTensor.data[3] = 1.0;
+
+    try prelu_op.diff(gradTensor);
+
+    // Expected gradients for x: 1 if x > 0 else alpha
+    const expected_grad_x = [_]f64{
+        @as(f64, 0.01), // alpha[0] for x < 0
+        @as(f64, 0.02), // alpha[1] for x < 0
+        @as(f64, 0.01), // alpha[0] for x = 0
+        @as(f64, 1.0), // 1 for x > 0
+    };
+
+    // Expected gradients for alpha: x if x < 0 else 0
+    const expected_grad_alpha = [_]f64{
+        @as(f64, -2.0), // -2.0 for x < 0 using alpha[0]
+        @as(f64, -1.0), // -1.0 for x < 0 using alpha[1]
+    };
+
+    // Check gradients for x
+    for (x.grad.data, expected_grad_x) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+
+    // Check gradients for alpha
+    for (prelu_op.grad.data, expected_grad_alpha) |actual, exp| {
+        try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
 }
 
 test "prelu with 2d shapes" {

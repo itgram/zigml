@@ -16,9 +16,9 @@ const Variable = autodiff.Variable;
 pub const SELU = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    x: Node,
     alpha: f64 = 1.6732632423543772848170429916717, // small slope for negative inputs
     lambda: f64 = 1.0507009873554804934193349852946, // scaling factor for positive inputs
+    x: Node,
 
     /// Creates a new SELU node with the given input node and optional alpha and lambda values.
     pub fn init(allocator: std.mem.Allocator, x: Node, alpha: f64, lambda: f64) !*SELU {
@@ -26,9 +26,9 @@ pub const SELU = struct {
         self.* = .{
             .allocator = allocator,
             .value = null,
-            .x = x,
             .alpha = alpha,
             .lambda = lambda,
+            .x = x,
         };
         return self;
     }

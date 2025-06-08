@@ -15,8 +15,8 @@ const Variable = autodiff.Variable;
 pub const Softmax = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
-    x: Node,
     axis: usize, // Axis along which to compute the softmax. Default is 0.
+    x: Node,
 
     /// Creates a new softmax node with the given input node.
     pub fn init(allocator: std.mem.Allocator, x: Node, axis: usize) !*Softmax {
@@ -24,8 +24,8 @@ pub const Softmax = struct {
         self.* = .{
             .allocator = allocator,
             .value = null,
-            .x = x,
             .axis = axis,
+            .x = x,
         };
         return self;
     }

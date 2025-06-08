@@ -13,9 +13,9 @@ const epsilon = 1e-12; // Small value to prevent log(0), matching PyTorch's CCE 
 pub const SoftmaxCCE = struct {
     allocator: std.mem.Allocator,
     value: ?*Tensor,
+    axis: usize, // Axis along which to compute the softmax. Default is 0.
     x: Node, // logits
     y: Node, // one-hot encoded labels
-    axis: usize, // Axis along which to compute the softmax. Default is 0.
 
     /// Creates a new SoftmaxCCE node with the given input nodes.
     pub fn init(allocator: std.mem.Allocator, x: Node, y: Node, axis: usize) !*SoftmaxCCE {
@@ -23,9 +23,9 @@ pub const SoftmaxCCE = struct {
         self.* = .{
             .allocator = allocator,
             .value = null,
+            .axis = axis,
             .x = x,
             .y = y,
-            .axis = axis,
         };
         return self;
     }
