@@ -28,7 +28,6 @@ pub const LeakyReLU = struct {
             .x = x,
             .alpha = alpha,
         };
-
         return self;
     }
 

@@ -34,10 +34,13 @@ pub const Tensor = struct {
         // Copy the shape to avoid modifying the original shape.
         const rank = shape.len;
         const shapeCopy = try allocator.alloc(usize, rank);
+        errdefer allocator.free(shapeCopy);
+
         std.mem.copyForwards(usize, shapeCopy, shape);
 
         // Compute the strides for the tensor.
         const strides = try allocator.alloc(usize, rank);
+        errdefer allocator.free(strides);
 
         var stride: usize = 1;
         var i: usize = rank;
@@ -47,15 +50,21 @@ pub const Tensor = struct {
             stride *= shape[i];
         }
 
+        // Allocate the data for the tensor.
+        const data = try allocator.alloc(f64, size);
+        errdefer allocator.free(data);
+
+        // Create the tensor.
         const self = try allocator.create(Tensor);
+        errdefer allocator.destroy(self);
+
         self.* = .{
             .allocator = allocator,
             .size = size,
             .shape = shapeCopy,
             .strides = strides,
-            .data = try allocator.alloc(f64, size),
+            .data = data,
         };
-
         return self;
     }
 
@@ -289,4 +298,89 @@ test "tensor memory management" {
     const new_tensor = try Tensor.init(allocator, shape);
     defer new_tensor.deinit();
     try std.testing.expectEqual(@as(usize, 6), new_tensor.size);
+}
+
+test "tensor allocation failure" {
+    const allocator = std.testing.allocator;
+
+    // Test shape allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{ 2, 3 });
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test strides allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 1 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{ 2, 3 });
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test data allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 2 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{ 2, 3 });
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test Tensor struct allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 3 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{ 2, 3 });
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test successful allocation after failures
+    {
+        var tensor = try Tensor.init(allocator, &[_]usize{ 2, 3 });
+        defer tensor.deinit();
+
+        try std.testing.expectEqual(@as(usize, 2), tensor.shape[0]);
+        try std.testing.expectEqual(@as(usize, 3), tensor.shape[1]);
+        try std.testing.expectEqual(@as(usize, 6), tensor.size);
+    }
+}
+
+test "tensor allocation failure with different shapes" {
+    const allocator = std.testing.allocator;
+
+    // Test 1D tensor allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{5});
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test 3D tensor allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 1 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{ 2, 3, 4 });
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test empty tensor allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+
+        const result = Tensor.init(failing_allocator.allocator(), &[_]usize{});
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test successful allocation after failures
+    {
+        var tensor = try Tensor.init(allocator, &[_]usize{ 2, 3, 4 });
+        defer tensor.deinit();
+
+        try std.testing.expectEqual(@as(usize, 2), tensor.shape[0]);
+        try std.testing.expectEqual(@as(usize, 3), tensor.shape[1]);
+        try std.testing.expectEqual(@as(usize, 4), tensor.shape[2]);
+        try std.testing.expectEqual(@as(usize, 24), tensor.size);
+    }
 }

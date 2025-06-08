@@ -28,7 +28,6 @@ pub const Subtract = struct {
             .x = x,
             .y = y,
         };
-
         return self;
     }
 

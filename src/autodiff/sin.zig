@@ -27,7 +27,6 @@ pub const Sin = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

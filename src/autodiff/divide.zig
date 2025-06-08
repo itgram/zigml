@@ -29,7 +29,6 @@ pub const Divide = struct {
             .x = x,
             .y = y,
         };
-
         return self;
     }
 

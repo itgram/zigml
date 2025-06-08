@@ -22,7 +22,6 @@ pub const Constant = struct {
             .allocator = allocator,
             .value = value,
         };
-
         return self;
     }
 

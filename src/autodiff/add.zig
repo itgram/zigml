@@ -29,7 +29,6 @@ pub const Add = struct {
             .x = x,
             .y = y,
         };
-
         return self;
     }
 

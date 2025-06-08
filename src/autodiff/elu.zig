@@ -28,7 +28,6 @@ pub const ELU = struct {
             .x = x,
             .alpha = alpha,
         };
-
         return self;
     }
 

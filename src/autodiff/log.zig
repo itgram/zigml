@@ -27,7 +27,6 @@ pub const Log = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

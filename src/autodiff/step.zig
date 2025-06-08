@@ -27,7 +27,6 @@ pub const Step = struct {
             .x = x,
             .threshold = threshold,
         };
-
         return self;
     }
 

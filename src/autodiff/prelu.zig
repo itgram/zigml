@@ -31,14 +31,18 @@ pub const PReLU = struct {
         }
 
         const self = try allocator.create(PReLU);
+        errdefer allocator.destroy(self);
+
+        const grad = try Tensor.init(allocator, alpha.shape);
+        errdefer grad.deinit();
+
         self.* = .{
             .allocator = allocator,
             .value = null,
-            .grad = try Tensor.init(allocator, alpha.shape),
+            .grad = grad,
             .x = x,
             .alpha = alpha,
         };
-
         self.grad.zero();
 
         return self;
@@ -554,5 +558,66 @@ test "prelu with 2d shapes" {
 
     for (result2.data, expected2) |actual, exp| {
         try std.testing.expectApproxEqAbs(exp, actual, 1e-6);
+    }
+}
+
+test "prelu allocation failure" {
+    const allocator = std.testing.allocator;
+
+    // Create input tensor
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Create alpha tensor with same shape as input
+    const alphaTensor = try Tensor.init(allocator, &[_]usize{4});
+    defer alphaTensor.deinit();
+    alphaTensor.data[0] = 0.01;
+    alphaTensor.data[1] = 0.02;
+    alphaTensor.data[2] = 0.03;
+    alphaTensor.data[3] = 0.04;
+
+    // Create variables
+    var x = try Variable.init(allocator, "x", xTensor);
+    defer x.deinit();
+
+    // Test PReLU struct allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+
+        const result = PReLU.init(failing_allocator.allocator(), x.node(), alphaTensor);
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test gradient tensor allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 1 });
+
+        const result = PReLU.init(failing_allocator.allocator(), x.node(), alphaTensor);
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test value tensor allocation failure during eval
+    {
+        var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
+        defer prelu_op.deinit();
+
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+        prelu_op.allocator = failing_allocator.allocator();
+
+        const result = prelu_op.eval();
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test successful allocation after failures
+    {
+        var prelu_op = try PReLU.init(allocator, x.node(), alphaTensor);
+        defer prelu_op.deinit();
+
+        const result = try prelu_op.eval();
+        try std.testing.expectEqual(@as(usize, 4), result.shape[0]);
     }
 }

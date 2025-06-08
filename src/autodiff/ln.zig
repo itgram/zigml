@@ -29,7 +29,6 @@ pub const Ln = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

@@ -27,7 +27,6 @@ pub const Cos = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

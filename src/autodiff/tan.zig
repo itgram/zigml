@@ -27,7 +27,6 @@ pub const Tan = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

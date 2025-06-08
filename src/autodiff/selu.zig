@@ -30,7 +30,6 @@ pub const SELU = struct {
             .alpha = alpha,
             .lambda = lambda,
         };
-
         return self;
     }
 

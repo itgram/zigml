@@ -27,7 +27,6 @@ pub const Softmax = struct {
             .x = x,
             .axis = axis,
         };
-
         return self;
     }
 

@@ -29,7 +29,6 @@ pub const Linear = struct {
             .value = null,
             .x = x,
         };
-
         return self;
     }
 

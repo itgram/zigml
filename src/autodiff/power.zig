@@ -29,7 +29,6 @@ pub const Power = struct {
             .x = x,
             .y = y,
         };
-
         return self;
     }
 

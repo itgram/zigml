@@ -29,11 +29,16 @@ pub const Variable = struct {
     /// Creates a new variable node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) !*Variable {
         const self = try allocator.create(Variable);
+        errdefer allocator.destroy(self);
+
+        const grad = try Tensor.init(allocator, value.shape);
+        errdefer grad.deinit();
+
         self.* = .{
             .allocator = allocator,
             .name = name,
             .value = value,
-            .grad = try Tensor.init(allocator, value.shape),
+            .grad = grad,
         };
         self.grad.zero();
 
@@ -383,5 +388,42 @@ test "variable gradient accumulation" {
     x.reset();
     for (x.grad.data) |g| {
         try std.testing.expectApproxEqAbs(0.0, g, 1e-6);
+    }
+}
+
+test "variable allocation failure" {
+    const allocator = std.testing.allocator;
+
+    // Create input tensor with test values
+    const xTensor = try Tensor.init(allocator, &[_]usize{4});
+    defer xTensor.deinit();
+    xTensor.data[0] = -2.0;
+    xTensor.data[1] = -1.0;
+    xTensor.data[2] = 0.0;
+    xTensor.data[3] = 1.0;
+
+    // Test Variable allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 0 });
+
+        const result = Variable.init(failing_allocator.allocator(), "x", xTensor);
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test gradient tensor allocation failure
+    {
+        var failing_allocator = std.testing.FailingAllocator.init(allocator, .{ .fail_index = 1 });
+
+        const result = Variable.init(failing_allocator.allocator(), "x", xTensor);
+        try std.testing.expectError(error.OutOfMemory, result);
+    }
+
+    // Test successful allocation after failures
+    {
+        var x = try Variable.init(allocator, "x", xTensor);
+        defer x.deinit();
+
+        const result = try x.eval();
+        try std.testing.expectEqual(@as(usize, 4), result.shape[0]);
     }
 }
