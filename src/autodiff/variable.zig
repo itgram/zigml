@@ -28,6 +28,11 @@ pub const Variable = struct {
 
     /// Creates a new variable node with the given tensor value.
     pub fn init(allocator: std.mem.Allocator, name: []const u8, value: *Tensor) !*Variable {
+        const nameCopy = try allocator.alloc(u8, name.len);
+        errdefer allocator.free(nameCopy);
+
+        std.mem.copyForwards(u8, nameCopy, name);
+
         const grad = try Tensor.init(allocator, value.shape);
         errdefer grad.deinit();
 
@@ -36,7 +41,7 @@ pub const Variable = struct {
 
         self.* = .{
             .allocator = allocator,
-            .name = name,
+            .name = nameCopy,
             .value = value,
             .grad = grad,
         };
@@ -48,6 +53,7 @@ pub const Variable = struct {
     /// Deinitializes the node and frees all allocated resources.
     /// This should be called when the node is no longer needed.
     pub fn deinit(self: *Variable) void {
+        self.allocator.free(self.name);
         self.grad.deinit();
         self.allocator.destroy(self);
     }
