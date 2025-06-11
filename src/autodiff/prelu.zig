@@ -38,7 +38,7 @@ pub const PReLU = struct {
             .alpha = alpha,
             .x = x,
         };
-        self.grad.zero();
+        self.grad.zeros();
 
         return self;
     }

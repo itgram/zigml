@@ -1,7 +1,6 @@
 const std = @import("std");
 const autodiff = @import("autodiff");
 const Tensor = autodiff.Tensor;
-const math = std.math;
 
 /// Error types for metrics
 const MetricsError = error{

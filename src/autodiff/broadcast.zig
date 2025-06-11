@@ -131,7 +131,7 @@ pub const Broadcast = struct {
         // Create gradient tensor with input shape
         const grad_x = try Tensor.init(self.allocator, x.shape);
         defer grad_x.deinit();
-        grad_x.zero();
+        grad_x.zeros();
 
         // Accumulate gradients from output to input
         var x_indices = try self.allocator.alloc(usize, x.shape.len);

@@ -76,11 +76,6 @@ pub const Tensor = struct {
         self.allocator.destroy(self);
     }
 
-    /// Set all elements of the tensor to 0.
-    pub fn zero(self: *Tensor) void {
-        @memset(self.data, 0.0);
-    }
-
     /// Get the value of the tensor at the given indices.
     pub fn get(self: *Tensor, indices: []const usize) !f64 {
         const idx = try self.indexOf(indices);
@@ -108,6 +103,24 @@ pub const Tensor = struct {
         }
 
         return idx;
+    }
+
+    /// Set all elements of the tensor to 0.
+    pub fn zeros(self: *Tensor) void {
+        @memset(self.data, 0.0);
+    }
+
+    /// Initialize a new tensor with random values from a normal distribution
+    /// mean = 0, standard deviation = 1
+    pub fn randn(self: *Tensor, scale: f64) void {
+        for (self.data) |*value| {
+            // Box-Muller transform to generate normal distribution
+            const r1 = std.crypto.random.float(f64);
+            const r2 = std.crypto.random.float(f64);
+            const z0 = std.math.sqrt(-2.0 * @log(r1)) * @cos(2.0 * std.math.pi * r2);
+
+            value.* = z0 * scale;
+        }
     }
 
     /// Format the tensor as a string.
@@ -222,7 +235,7 @@ test "tensor indexing" {
     }
 }
 
-test "tensor zero" {
+test "tensor zeros" {
     const allocator = std.testing.allocator;
     const shape = &[_]usize{ 2, 3 };
     const tensor = try Tensor.init(allocator, shape);
@@ -240,7 +253,7 @@ test "tensor zero" {
     try std.testing.expectEqualSlices(f64, &[_]f64{ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }, tensor.data);
 
     // Zero the tensor
-    tensor.zero();
+    tensor.zeros();
 
     // Check all values are zero
     try std.testing.expectEqualSlices(f64, &[_]f64{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }, tensor.data);
@@ -382,5 +395,105 @@ test "tensor allocation failure with different shapes" {
         try std.testing.expectEqual(@as(usize, 3), tensor.shape[1]);
         try std.testing.expectEqual(@as(usize, 4), tensor.shape[2]);
         try std.testing.expectEqual(@as(usize, 24), tensor.size);
+    }
+}
+
+test "tensor randn" {
+    const allocator = std.testing.allocator;
+    const shape = &[_]usize{ 1000, 1 }; // Large sample size for statistical tests
+    const default_scale = 2.0;
+
+    // Test basic initialization
+    {
+        var tensor = try Tensor.init(allocator, shape);
+        defer tensor.deinit();
+        tensor.randn(default_scale);
+
+        // Check shape and size
+        try std.testing.expectEqual(@as(usize, 1000), tensor.size);
+        try std.testing.expectEqualSlices(usize, shape, tensor.shape);
+
+        // Check that values are within reasonable bounds (6 standard deviations)
+        for (tensor.data) |value| {
+            try std.testing.expect(value >= -6.0 * default_scale);
+            try std.testing.expect(value <= 6.0 * default_scale);
+        }
+    }
+
+    // Test distribution properties
+    {
+        var tensor = try Tensor.init(allocator, shape);
+        defer tensor.deinit();
+        tensor.randn(default_scale);
+
+        // Calculate mean
+        var sum: f64 = 0.0;
+        for (tensor.data) |value| {
+            sum += value;
+        }
+        const mean = sum / @as(f64, @floatFromInt(tensor.size));
+
+        // Calculate variance
+        var sum_sq_diff: f64 = 0.0;
+        for (tensor.data) |value| {
+            const diff = value - mean;
+            sum_sq_diff += diff * diff;
+        }
+        const variance = sum_sq_diff / @as(f64, @floatFromInt(tensor.size));
+        const std_dev = std.math.sqrt(variance);
+
+        // Mean should be close to 0
+        try std.testing.expectApproxEqAbs(@as(f64, 0.0), mean, 0.1);
+        // Standard deviation should be close to scale
+        try std.testing.expectApproxEqAbs(default_scale, std_dev, 0.1);
+    }
+
+    // Test different scales
+    {
+        const test_scales = [_]f64{ 0.5, 1.0, 2.0 };
+        for (test_scales) |test_scale| {
+            var tensor = try Tensor.init(allocator, shape);
+            defer tensor.deinit();
+            tensor.randn(test_scale);
+
+            // Calculate standard deviation
+            var sum: f64 = 0.0;
+            var sum_sq: f64 = 0.0;
+            for (tensor.data) |value| {
+                sum += value;
+                sum_sq += value * value;
+            }
+            const mean = sum / @as(f64, @floatFromInt(tensor.size));
+            const variance = (sum_sq / @as(f64, @floatFromInt(tensor.size))) - (mean * mean);
+            const std_dev = std.math.sqrt(variance);
+
+            // Standard deviation should be close to scale
+            try std.testing.expectApproxEqAbs(test_scale, std_dev, 0.1);
+        }
+    }
+
+    // Test different shapes
+    {
+        const shapes = [_][]const usize{
+            &[_]usize{100},
+            &[_]usize{ 10, 10 },
+            &[_]usize{ 5, 5, 4 },
+        };
+
+        for (shapes) |test_shape| {
+            var tensor = try Tensor.init(allocator, test_shape);
+            defer tensor.deinit();
+            tensor.randn(1.0);
+
+            // Check shape and size
+            try std.testing.expectEqualSlices(usize, test_shape, tensor.shape);
+            try std.testing.expectEqual(Tensor.sizeOf(test_shape), tensor.size);
+
+            // Check that values are within reasonable bounds
+            for (tensor.data) |value| {
+                try std.testing.expect(value >= -6.0);
+                try std.testing.expect(value <= 6.0);
+            }
+        }
     }
 }

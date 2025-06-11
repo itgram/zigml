@@ -45,7 +45,7 @@ pub const Variable = struct {
             .value = value,
             .grad = grad,
         };
-        self.grad.zero();
+        self.grad.zeros();
 
         return self;
     }
@@ -83,7 +83,7 @@ pub const Variable = struct {
     /// Resets the node's state by clearing accumulated gradients.
     /// This is useful when you want to start a new gradient computation.
     pub fn reset(self: *Variable) void {
-        self.grad.zero();
+        self.grad.zeros();
     }
 
     /// Returns this variable node as a generic Node interface.
